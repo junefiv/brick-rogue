@@ -5,7 +5,7 @@
   "xp_base": 10, "xp_linear": 4, "xp_power": 0.7,
   "hp_base": 3, "hp_linear": 1.2, "hp_power": 0.18, "hp_exponent": 1.55,
   "skills": {
-    "multi": {"name":"멀티 볼", "short":"MULTI", "type":"passive", "description":"레벨마다 공 +8개", "color":"53f5d0"},
+    "multi": {"name":"멀티 볼", "short":"MULTI", "type":"passive", "description":"POINT로 공을 1개씩 구매, 8개마다 단계 상승", "color":"53f5d0"},
     "power": {"name":"파워 코어", "short":"POWER", "type":"passive", "description":"레벨마다 기본 피해 +1", "color":"ffbf69"},
     "pierce": {"name":"관통", "short":"PIERCE", "type":"passive", "description":"레벨마다 관통 확률 +9%", "color":"6fbbff"},
     "blast": {"name":"폭발", "short":"BLAST", "type":"passive", "description":"충돌 시 주변 벽돌에 범위 피해", "color":"ff7d9b"},

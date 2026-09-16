@@ -38,6 +38,10 @@ func run():
 	await screenshot("01-menu")
 	await tap(Vector2(300,800))
 	check(game.state=="aim","Menu button enters gameplay")
+	game.model.points=100
+	await process_frame
+	await tap(Vector2(330,1015))
+	check(game.model.logical_balls()==9 and game.model.points==0,"POINT button buys exactly one ball")
 	await screenshot("02-gameplay")
 	var event=InputEventMouseButton.new()
 	event.button_index=MOUSE_BUTTON_LEFT

@@ -159,17 +159,22 @@ func step(dt: float):
 			var pierces = false
 			if hit.brick != null:
 				var amount = model.damage() * ball.weight * (1 + minf(2, ball.bounce * 0.05 * model.skill_level("rebound")))
-				if model.rng.randf() < model.adjusted_probability(0.1 * model.skill_level("critical"), ball.weight):
+				var critical = model.rng.randf() < model.adjusted_probability(0.1 * model.skill_level("critical"), ball.weight)
+				if critical:
 					amount *= 2
+					model.emit_effect(ball.p, Color("ffbf69"), 52, "critical", 0.5)
 				model.enqueue(hit.brick, amount, 0, "primary", ball.weight)
 				var chance = 0.55 if model.skills.has("pierce_bomb") else model.skill_level("pierce") * 0.09
 				pierces = model.rng.randf() < model.adjusted_probability(chance, ball.weight)
 				if pierces:
+					model.emit_effect(ball.p, Color("6fbbff"), 60, "pierce", 0.45, {"direction":ball.v.normalized()})
 					ball.ignored.append(hit.brick.id)
 					if model.skills.has("pierce_bomb"):
 						model.area_damage(ball.p, 145, amount * (0.8 + 0.2 * model.skill_level("pierce_bomb")), 1, "pierce_bomb")
 			else:
 				ball.bounce += 1
+				if model.skill_level("rebound") > 0:
+					model.emit_effect(ball.p, Color("53f5d0"), 42, "rebound", 0.45, {"normal":hit.normal})
 			if not pierces:
 				ball.v = ball.v.bounce(hit.normal)
 				ball.p += hit.normal * 0.02

@@ -9,7 +9,8 @@ var cooldowns: Dictionary = {}
 var round_no = 1
 var level = 1
 var xp = 0
-var score = 0
+var points = 0
+var purchased_balls = 0
 var launch_x = 360.0
 var serial = 0
 var hits = 0
@@ -36,7 +37,8 @@ func reset(is_lab: bool = false):
 	round_no = 1
 	level = 1
 	xp = 0
-	score = 0
+	points = 0
+	purchased_balls = 0
 	launch_x = 360
 	serial = 0
 	hits = 0
@@ -54,6 +56,8 @@ func reset(is_lab: bool = false):
 	effects.clear()
 	if lab:
 		skills = {"multi":5, "lightning":5, "pierce":5, "blast":5, "critical":5, "rebound":5, "laser":5, "bomb":5, "freeze":3, "stop":3}
+		purchased_balls = 40
+		points = 999999
 		for row in range(9):
 			for col in range(7):
 				add_brick(col, row, 500, "normal")
@@ -78,7 +82,28 @@ func count_type(type: String) -> int:
 func logical_balls() -> int:
 	if lab:
 		return 300
-	return mini(config.ball_cap, config.initial_balls + 8 * skill_level("multi") + (32 + 8 * skill_level("thunder_swarm") if skills.has("thunder_swarm") else 0))
+	return mini(config.ball_cap, config.initial_balls + purchased_balls + (32 + 8 * skill_level("thunder_swarm") if skills.has("thunder_swarm") else 0))
+
+func multiball_cost() -> int:
+	# One click buys exactly one ball. Every owned purchase raises the next price.
+	return 100 + 50 * maxi(0, logical_balls() - config.initial_balls)
+
+func can_buy_multiball() -> bool:
+	if lab or logical_balls() >= config.ball_cap or points < multiball_cost():
+		return false
+	var next_tier = mini(5, int((purchased_balls + 1) / 8))
+	return next_tier <= skill_level("multi") or skills.has("multi") or count_type("passive") < config.passive_slots
+
+func buy_multiball() -> bool:
+	if not can_buy_multiball():
+		return false
+	points -= multiball_cost()
+	purchased_balls += 1
+	var tier_level = mini(5, int(purchased_balls / 8))
+	if tier_level > 0:
+		skills["multi"] = tier_level
+	emit_effect(Vector2(launch_x, 952), Color("53f5d0"), 90, "multiball", 0.9)
+	return true
 
 func damage() -> float:
 	return 1.0 + skill_level("power")
@@ -90,9 +115,53 @@ func add_brick(col: int, row: int, hp: int, kind: String, width: int = 1, height
 func brick_rect(b: Dictionary) -> Rect2:
 	return Rect2(42 + b.col * 92, 264 + b.row * 70, b.w * 92 - 8, b.h * 70 - 8)
 
+func overlaps_cells(b: Dictionary, col: int, row: int, width: int, height: int) -> bool:
+	return b.hp > 0 and b.col < col + width and b.col + b.w > col and b.row < row + height and b.row + b.h > row
+
+func prepare_boss_area(width: int, height: int) -> int:
+	var candidates: Array = []
+	for col in range(0, 8 - width):
+		var overlap_count = 0
+		for b in bricks:
+			if overlaps_cells(b, col, 0, width, height):
+				overlap_count += 1
+		candidates.append({"col":col,"overlaps":overlap_count,"center_distance":absf((col + width * 0.5) - 3.5)})
+	candidates.sort_custom(func(a, b):
+		if a.overlaps == b.overlaps:
+			return a.center_distance < b.center_distance
+		return a.overlaps < b.overlaps
+	)
+	var boss_col = int(candidates[0].col)
+	var displaced = bricks.filter(func(b): return overlaps_cells(b, boss_col, 0, width, height))
+	for b in displaced:
+		var relocated = false
+		for target_row in range(0, height):
+			for target_col in range(7):
+				if target_col >= boss_col and target_col < boss_col + width:
+					continue
+				var occupied = bricks.any(func(other):
+					return other.id != b.id and overlaps_cells(other, target_col, target_row, 1, 1)
+				)
+				if not occupied:
+					b.col = target_col
+					b.row = target_row
+					b.w = 1
+					b.h = 1
+					relocated = true
+					break
+			if relocated:
+				break
+		if not relocated:
+			b.hp = 0
+	bricks = bricks.filter(func(b): return b.hp > 0)
+	return boss_col
+
 func spawn_row(row: int = 0):
 	if round_no % 10 == 0 and row == 0 and round_no <= 40:
-		add_brick(2, 0, int(60 + round_no * 9), "boss", 3 if round_no == 40 else 2, 2)
+		var boss_width = 3 if round_no == 40 else 2
+		var boss_col = prepare_boss_area(boss_width, 2)
+		add_brick(boss_col, 0, int(60 + round_no * 9), "boss", boss_width, 2)
+		emit_effect(brick_rect(bricks.back()).get_center(), Color("b59aff"), 170, "boss_spawn", 1.2)
 		return
 	var gap = rng.randi_range(0, 6)
 	var base_hp = int(round(config.hp_base + config.hp_linear * round_no + config.hp_power * pow(round_no, config.hp_exponent)))
@@ -118,11 +187,23 @@ func enqueue(b: Dictionary, amount: float, depth: int = 0, group: String = "prim
 	event_queue.append({"brick":b,"amount":amount,"depth":depth,"group":group,"weight":weight})
 	events_peak = maxi(events_peak, event_queue.size() - event_cursor)
 
-func emit_effect(pos: Vector2, color: Color, radius: float = 30):
-	if vfx_budget <= 0 or effects.size() >= 100:
+func emit_effect(pos: Vector2, color: Color, radius: float = 30, kind: String = "burst", duration: float = 0.5, extra: Dictionary = {}):
+	if vfx_budget <= 0:
+		return
+	if kind in ["thunder_swarm","freeze_wave","time_stop","laser","orbital_beam","boss_spawn"]:
+		for existing in effects:
+			if existing.kind == kind:
+				existing.life = maxf(existing.life, duration)
+				for key in extra:
+					existing[key] = extra[key]
+				return
+	if effects.size() >= 48:
 		return
 	vfx_budget -= 1
-	effects.append({"p":pos,"color":color,"r":radius,"life":0.4})
+	var effect = {"p":pos,"color":color,"r":radius,"life":duration,"duration":duration,"kind":kind,"seed":serial + hits * 17 + effects.size() * 31}
+	for key in extra:
+		effect[key] = extra[key]
+	effects.append(effect)
 
 func adjusted_probability(p: float, weight: float) -> float:
 	return 1.0 - pow(1.0 - clampf(p, 0, 1), weight)
@@ -139,12 +220,15 @@ func drain_events(budget: int = 256):
 		if b.shield > 0:
 			b.shield -= 1
 			b.flash = 0.15
+			emit_effect(brick_rect(b).get_center(), Color("6fbbff"), 48, "shield", 0.45)
 			continue
 		var dealt = event.amount
 		if b.kind == "armor":
 			dealt = maxf(1, dealt - 1)
 		b.hp -= dealt
 		b.flash = 0.12
+		if skill_level("power") > 0 and event.group == "primary" and (hits + 1) % 8 == 0:
+			emit_effect(brick_rect(b).get_center(), Color("ffbf69"), 34, "power", 0.34)
 		if event.group == "primary":
 			hits += 1
 			proc_primary(b, event)
@@ -152,8 +236,8 @@ func drain_events(budget: int = 256):
 			kills += 1
 			var reward = 50 if b.kind == "boss" else (3 if b.kind == "normal" else 5)
 			xp += reward
-			score += reward * 100
-			emit_effect(brick_rect(b).get_center(), Color("53f5d0"), 50)
+			points += reward * 100
+			emit_effect(brick_rect(b).get_center(), Color("53f5d0"), 58, "shatter", 0.65)
 			if b.kind == "boss":
 				shards += 2
 				boss_killed = true
@@ -173,6 +257,7 @@ func proc_primary(b: Dictionary, event: Dictionary):
 	var chain = skill_level("lightning")
 	if chain > 0 and rng.randf() < adjusted_probability(0.07 * chain, event.weight):
 		var targets: Array = []
+		var lightning_points: Array = [center]
 		# Compute geometry once per candidate, not twice per sort comparison.
 		for other in bricks:
 			if other.hp > 0 and other.id != b.id:
@@ -180,20 +265,32 @@ func proc_primary(b: Dictionary, event: Dictionary):
 		targets.sort_custom(func(a, c): return a[0] < c[0])
 		for i in range(mini(chain + 1, targets.size())):
 			enqueue(targets[i][1], event.amount * 0.7, 1, "lightning")
-			emit_effect(brick_rect(targets[i][1]).get_center(), Color("c5a1ff"), 40)
+			lightning_points.append(brick_rect(targets[i][1]).get_center())
+		if lightning_points.size() > 1:
+			emit_effect(center, Color("c5a1ff"), 40, "lightning_chain", 0.55, {"points":lightning_points})
 	if skills.has("thunder_swarm") and hits % 12 == 0:
+		var storm_targets: Array = []
+		for other in bricks:
+			if other.hp > 0:
+				storm_targets.append(brick_rect(other).get_center())
+		emit_effect(Vector2(360, 270), Color("c5a1ff"), 320, "thunder_swarm", 0.9, {"targets":storm_targets})
 		for other in bricks:
 			if other.hp > 0:
 				enqueue(other, event.amount * (0.5 + 0.25 * skill_level("thunder_swarm")), 1, "swarm")
-				emit_effect(brick_rect(other).get_center(), Color("c5a1ff"), 35)
 	var frost = skill_level("frost")
 	if frost > 0 and rng.randf() < adjusted_probability(0.03 * frost, event.weight):
 		b.frozen = 1
+		emit_effect(center, Color("96edff"), 55, "frost", 0.75)
 
 func area_damage(center: Vector2, radius: float, amount: float, depth: int, group: String):
 	if depth > config.chain_depth:
 		return
-	emit_effect(center, Color("ff7d9b"), radius)
+	var effect_kind = {
+		"blast":"explosion", "explosive":"explosion", "pierce_bomb":"pierce_bomb",
+		"orbital":"orbital_explosion", "active":"bomb"
+	}.get(group, "explosion")
+	var effect_color = Color("96edff") if group == "frost" else Color("ff7d9b")
+	emit_effect(center, effect_color, radius, effect_kind, 0.75)
 	for b in bricks:
 		if b.hp > 0 and brick_rect(b).get_center().distance_to(center) <= radius:
 			enqueue(b, amount, depth, group)
@@ -204,6 +301,8 @@ func has_events() -> bool:
 func card_pool() -> Array:
 	var pool: Array = []
 	for id in config.skills:
+		if id == "multi":
+			continue
 		var spec = config.skills[id]
 		if skills.has(id):
 			if skill_level(id) < (3 if spec.get("fusion", false) else 5):
@@ -244,6 +343,8 @@ func fuse(recipe: Dictionary) -> bool:
 	var inherited_cd = maxi(int(cooldowns.get(recipe.a, 0)), int(cooldowns.get(recipe.b, 0)))
 	skills.erase(recipe.a)
 	skills.erase(recipe.b)
+	if recipe.result == "thunder_swarm":
+		purchased_balls = maxi(0, purchased_balls - 40)
 	cooldowns.erase(recipe.a)
 	cooldowns.erase(recipe.b)
 	skills[recipe.result] = 1
@@ -265,6 +366,8 @@ func dismantle(id: String) -> bool:
 			cooldowns.erase(id)
 			skills[recipe.a] = 5
 			skills[recipe.b] = 5
+			if id == "thunder_swarm":
+				purchased_balls += 40
 			cooldowns[recipe.a] = cd
 			cooldowns[recipe.b] = cd
 			if dismantled > 0:
@@ -301,7 +404,7 @@ func is_dead() -> bool:
 func save_run():
 	if lab:
 		return
-	var data = {"version":1,"round":round_no,"level":level,"xp":xp,"score":score,"launch_x":launch_x,"serial":serial,"hits":hits,"kills":kills,"skills":skills,"cooldowns":cooldowns,"bricks":bricks,"shards":shards,"dismantled":dismantled,"rerolls":rerolls,"stop_rounds":stop_rounds,"final_dead":final_dead,"endless":endless,"rng_state":str(rng.state),"rng_seed":str(rng.seed)}
+	var data = {"version":1,"round":round_no,"level":level,"xp":xp,"points":points,"purchased_balls":purchased_balls,"launch_x":launch_x,"serial":serial,"hits":hits,"kills":kills,"skills":skills,"cooldowns":cooldowns,"bricks":bricks,"shards":shards,"dismantled":dismantled,"rerolls":rerolls,"stop_rounds":stop_rounds,"final_dead":final_dead,"endless":endless,"rng_state":str(rng.state),"rng_seed":str(rng.seed)}
 	var file = FileAccess.open(SAVE_PATH + ".tmp", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(data))
@@ -342,7 +445,8 @@ func load_run() -> bool:
 	round_no = int(data.round)
 	level = int(data.level)
 	xp = int(data.xp)
-	score = int(data.get("score", 0))
+	points = int(data.get("points", data.get("score", 0)))
+	purchased_balls = clampi(int(data.get("purchased_balls", skill_level("multi") * 8)), 0, config.ball_cap - config.initial_balls)
 	launch_x = clampf(data.launch_x, 45, 675)
 	serial = int(data.get("serial", 1000))
 	hits = int(data.get("hits", 0))

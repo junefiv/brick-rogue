@@ -119,6 +119,18 @@ func notify(message: String):
 	toast = message
 	toast_life = 3
 
+func purchase_ball():
+	var price = model.multiball_cost()
+	if model.buy_multiball():
+		notify("공 +1 구매 · %d POINT 사용 · 현재 %d개" % [price, model.logical_balls()])
+		model.save_run()
+	elif model.logical_balls() >= model.config.ball_cap:
+		notify("공 최대 수량에 도달했습니다.")
+	elif model.points < price:
+		notify("POINT가 부족합니다. 필요 %d / 보유 %d" % [price, model.points])
+	else:
+		notify("패시브 슬롯이 가득 찼습니다.")
+
 func _process(delta):
 	var viewport_size = get_viewport_rect().size
 	var usable = Rect2(Vector2.ZERO, viewport_size)
@@ -225,7 +237,7 @@ func resolve_levels():
 	if model.consume_level():
 		cards = model.draw_cards()
 		if cards.is_empty():
-			model.score += 500
+			model.points += 500
 			resolve_levels()
 		else:
 			state = "upgrade"
@@ -284,8 +296,10 @@ func active(id: String):
 	if id == "freeze":
 		for b in model.bricks:
 			b.frozen = maxi(1, b.frozen)
+		model.emit_effect(Vector2(360, 620), Color("96edff"), 330, "freeze_wave", 1.1)
 	elif id == "stop":
 		model.stop_rounds = maxi(1, model.stop_rounds)
+		model.emit_effect(Vector2(360, 610), Color("c5a1ff"), 290, "time_stop", 1.15)
 	consume_active(id)
 	state = "active_resolve"
 
@@ -298,6 +312,8 @@ func use_targeted_active():
 	armed = ""
 	if id in ["laser", "orbital_strike"]:
 		var origin = Vector2(model.launch_x, Simulation.RETURN_Y)
+		var endpoint = origin + direction * 1500
+		model.emit_effect(endpoint, Color("ff7d9b") if id == "laser" else Color("ffbf69"), 80, "laser" if id == "laser" else "orbital_beam", 0.8, {"from":origin,"to":endpoint})
 		for b in model.bricks:
 			if Simulation.sweep_circle(origin, direction * 1500, model.brick_rect(b), 12).t <= 1:
 				model.enqueue(b, 12.0 * model.skill_level(id), 0, "active")
@@ -306,6 +322,7 @@ func use_targeted_active():
 					model.area_damage(model.brick_rect(b).get_center(), 170, 18.0 * model.skill_level(id), 0, "orbital")
 	else:
 		var path = sim.aim_path(direction)
+		model.emit_effect(path.back(), Color("ffbf69"), 190, "bomb_drop", 0.9, {"from":path.back()-Vector2(0,180)})
 		model.area_damage(path.back(), 190, 15.0 * model.skill_level(id), 0, "active")
 	consume_active(id)
 	state = "active_resolve"
@@ -331,6 +348,141 @@ func panel(rect: Rect2, fill: Color = INK, stroke: Color = Color("20334b"), radi
 			style_cache.clear()
 		style_cache[key] = style
 	draw_style_box(style, rect)
+
+func draw_bolt(from: Vector2, to: Vector2, color: Color, alpha: float, width: float, seed_value: float):
+	var points = PackedVector2Array([from])
+	var direction_line = to - from
+	var perpendicular = direction_line.normalized().orthogonal()
+	for i in range(1, 7):
+		var ratio = float(i) / 7.0
+		var jitter = sin(seed_value * 0.37 + i * 7.13) * 13.0 * sin(PI * ratio)
+		points.append(from.lerp(to, ratio) + perpendicular * jitter)
+	points.append(to)
+	draw_polyline(points, Color(color, alpha * 0.28), width + 6, true)
+	draw_polyline(points, Color(color, alpha), width, true)
+	draw_polyline(points, Color(WHITE, alpha * 0.85), maxf(1, width * 0.3), true)
+
+func draw_ice_overlay(rect: Rect2):
+	draw_rect(rect.grow(-2), Color("96edff", 0.18))
+	for i in range(4):
+		var x = rect.position.x + 10 + i * maxf(10, (rect.size.x - 20) / 4.0)
+		draw_line(Vector2(x, rect.end.y - 4), Vector2(x + 18, rect.position.y + 5), Color("d9fbff", 0.7), 2, true)
+	var center = rect.get_center()
+	for angle in range(0, 360, 60):
+		var dir = Vector2.RIGHT.rotated(deg_to_rad(angle))
+		draw_line(center, center + dir * minf(18, rect.size.y * 0.26), Color("e9fdff", 0.85), 1.5, true)
+
+func draw_skill_effect(effect: Dictionary):
+	var duration = maxf(0.001, float(effect.get("duration", 0.5)))
+	var t = clampf(1.0 - float(effect.life) / duration, 0, 1)
+	var alpha = clampf(float(effect.life) / duration, 0, 1)
+	var p: Vector2 = effect.p
+	var color: Color = effect.color
+	var radius = float(effect.r)
+	var seed_value = float(effect.get("seed", 1))
+	match String(effect.get("kind", "burst")):
+		"multiball":
+			for i in range(10):
+				var dir = Vector2.UP.rotated((i - 4.5) * 0.17)
+				var orb = p + dir * (18 + 72 * t)
+				draw_circle(orb, 5 + 2 * (1-t), Color(WHITE, alpha))
+				draw_circle(orb, 10, Color(color, alpha * 0.22), false, 3, true)
+		"power":
+			for i in range(8):
+				var dir = Vector2.RIGHT.rotated(i * TAU / 8.0)
+				draw_line(p + dir * 5, p + dir * radius * (0.5 + t), Color(color, alpha), 3, true)
+			draw_colored_polygon(PackedVector2Array([p+Vector2(0,-13),p+Vector2(10,0),p+Vector2(0,13),p+Vector2(-10,0)]), Color(WHITE, alpha * 0.8))
+		"critical":
+			draw_line(p+Vector2(-radius,-radius)*0.45,p+Vector2(radius,radius)*0.45,Color(color,alpha),5,true)
+			draw_line(p+Vector2(radius,-radius)*0.45,p+Vector2(-radius,radius)*0.45,Color(WHITE,alpha),3,true)
+			text_at("CRIT",p+Vector2(-22,-31-18*t),15,Color(color,alpha))
+		"pierce":
+			var dir: Vector2 = effect.get("direction", Vector2.UP)
+			draw_line(p-dir*55,p+dir*70,Color(color,alpha*0.35),10,true)
+			draw_line(p-dir*45,p+dir*62,Color(WHITE,alpha),2,true)
+			var side = dir.orthogonal()
+			draw_colored_polygon(PackedVector2Array([p+dir*68,p+dir*45+side*10,p+dir*45-side*10]),Color(color,alpha))
+		"rebound":
+			var normal: Vector2 = effect.get("normal", Vector2.RIGHT)
+			for i in range(3):
+				var spread = (i-1)*0.28
+				draw_line(p,p+normal.rotated(spread)*(25+radius*t),Color(color,alpha*(1.0-i*0.16)),3,true)
+			draw_arc(p,12+radius*t,-PI*0.75,PI*0.75,16,Color(color,alpha),2,true)
+		"lightning":
+			draw_bolt(effect.get("from",p-Vector2(0,100)),p,color,alpha,4,seed_value)
+			draw_circle(p,10+16*t,Color(color,alpha*0.18))
+		"lightning_chain":
+			var chain_points: Array=effect.get("points",[])
+			for i in range(chain_points.size()-1):
+				draw_bolt(chain_points[i],chain_points[i+1],color,alpha,3.5,seed_value+i*17)
+				if i>0:
+					draw_circle(chain_points[i],8+10*t,Color(color,alpha*0.18))
+		"thunder_swarm":
+			draw_rect(Rect2(38,260,644,730),Color("8e73ff",alpha*0.08))
+			var targets: Array = effect.get("targets",[])
+			for i in range(mini(18,targets.size())):
+				draw_bolt(Vector2(targets[i].x,260),targets[i],color,alpha,3,seed_value+i*13)
+		"frost":
+			for i in range(6):
+				var dir=Vector2.RIGHT.rotated(i*TAU/6.0)
+				draw_line(p-dir*radius*0.35,p+dir*radius*(0.45+t*0.35),Color(color,alpha),2,true)
+				draw_line(p+dir*radius*0.35,p+dir*radius*0.2+dir.orthogonal()*8,Color(WHITE,alpha),1,true)
+		"freeze_wave":
+			var wave_y=lerpf(900,300,t)
+			draw_rect(Rect2(38,wave_y-70,644,140),Color(color,alpha*0.12))
+			for x in range(48,680,28):
+				draw_colored_polygon(PackedVector2Array([Vector2(x,wave_y+12),Vector2(x+14,wave_y-20),Vector2(x+28,wave_y+12)]),Color(color,alpha*0.65))
+		"time_stop":
+			draw_rect(Rect2(38,260,644,730),Color(color,alpha*0.07))
+			draw_arc(p,radius*(0.45+0.25*t),0,TAU,64,Color(color,alpha),5,true)
+			draw_line(p,p+Vector2.UP.rotated(-1.1*t)*radius*0.28,Color(WHITE,alpha),4,true)
+			draw_line(p,p+Vector2.RIGHT.rotated(-2.6*t)*radius*0.18,Color(color,alpha),3,true)
+		"laser":
+			var from: Vector2=effect.get("from",p)
+			var to: Vector2=effect.get("to",p)
+			draw_line(from,to,Color(color,alpha*0.18),22*(1-t*0.5),true)
+			draw_line(from,to,Color(color,alpha),7*(1-t*0.4),true)
+			draw_line(from,to,Color(WHITE,alpha),2,true)
+		"orbital_beam":
+			var from: Vector2=effect.get("from",p)
+			var to: Vector2=effect.get("to",p)
+			draw_line(from,to,Color(color,alpha*0.55),12,true)
+			for i in range(6):
+				var marker=from.lerp(to,float(i+1)/7.0)
+				draw_arc(marker,18+8*t,0,TAU,20,Color(color,alpha),2,true)
+		"bomb_drop":
+			var from: Vector2=effect.get("from",p-Vector2(0,180))
+			if t < 0.48:
+				var bomb=from.lerp(p,t/0.48)
+				draw_circle(bomb,13,Color("182031",alpha))
+				draw_arc(bomb-Vector2(0,12),9,-PI*0.9,-PI*0.2,10,Color("ffbf69",alpha),3,true)
+			else:
+				var blast_t=(t-0.48)/0.52
+				draw_circle(p,radius*blast_t,Color("ffbf69",alpha*0.15))
+				draw_arc(p,radius*blast_t,0,TAU,32,Color("ffbf69",alpha),5,true)
+		"explosion", "bomb", "pierce_bomb", "orbital_explosion":
+			var outer_color=color
+			if effect.kind=="pierce_bomb": outer_color=Color("ff4f8b")
+			if effect.kind=="orbital_explosion": outer_color=Color("ffbf69")
+			draw_circle(p,radius*t,Color(outer_color,alpha*0.16))
+			draw_arc(p,radius*t,0,TAU,36,Color(outer_color,alpha),5,true)
+			draw_arc(p,radius*t*0.55,0,TAU,28,Color(WHITE,alpha*0.75),2,true)
+			for i in range(10):
+				var dir=Vector2.RIGHT.rotated(i*TAU/10.0+seed_value*0.01)
+				draw_line(p+dir*12,p+dir*radius*t,Color(outer_color,alpha),3,true)
+		"shield":
+			var poly=PackedVector2Array()
+			for i in range(6): poly.append(p+Vector2.RIGHT.rotated(i*TAU/6.0)*radius*(0.55+0.25*t))
+			poly.append(poly[0])
+			draw_polyline(poly,Color(color,alpha),4,true)
+		"boss_spawn":
+			draw_rect(Rect2(38,260,644,130),Color(color,alpha*0.09))
+			draw_arc(p,radius*(1-t*0.5),0,TAU,48,Color(color,alpha),6,true)
+			centered("BOSS SIGNAL",318,21,Color(color,alpha))
+		"shatter", _:
+			for i in range(9):
+				var dir=Vector2.RIGHT.rotated(i*TAU/9.0+seed_value*0.01)
+				draw_line(p+dir*8,p+dir*radius*t,Color(color,alpha),3,true)
 
 func button(rect: Rect2, label: String, action: Callable, primary: bool = false, accent: Color = MINT):
 	panel(rect, accent if primary else Color("122037"), accent if primary else Color("2a3b55"), 12)
@@ -401,8 +553,8 @@ func draw_game():
 	text_at("%02d" % model.round_no,Vector2(38,202),46)
 	text_at("LEVEL",Vector2(264,153),15,MUTED)
 	text_at("%02d" % model.level,Vector2(262,202),46)
-	text_at("SCORE",Vector2(494,153),15,MUTED)
-	text_at("%06d" % model.score,Vector2(492,199),32)
+	text_at("POINT",Vector2(494,153),15,MUTED)
+	text_at("%06d" % model.points,Vector2(492,199),32)
 	panel(Rect2(38,221,644,7),Color("1a2c43"),Color("1a2c43"),3)
 	draw_rect(Rect2(38,221,644*clampf(float(model.xp)/model.required_xp(),0,1),7),MINT)
 	text_at("XP  %d / %d" % [model.xp,model.required_xp()],Vector2(39,249),13,MUTED)
@@ -424,20 +576,20 @@ func draw_game():
 		if b.frozen > 0: color=Color("96edff")
 		panel(rect,Color(color,0.12 + (b.flash*2 if not low_flash else 0)),Color(color,0.85),7)
 		draw_line(rect.position+Vector2(9,1),rect.position+Vector2(rect.size.x-9,1),color,2)
-		var hp_text = str(maxi(0,ceili(b.hp)))
-		var size = 26 if b.kind != "boss" else 42
+		var hp_text = "%d/%d" % [maxi(0,ceili(b.hp)), maxi(1,ceili(b.max_hp))]
+		var size = 16 if b.kind != "boss" else 25
 		var tw = font.get_string_size(hp_text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
-		text_at(hp_text,rect.get_center()+Vector2(-tw/2,10),size,WHITE)
-		if b.kind != "normal":
-			var symbol = {"armor":"A","shield":"S","explosive":"+","boss":"CORE"}.get(b.kind,"")
-			text_at(symbol,rect.position+Vector2(7,15),10,color)
-		if b.frozen > 0:
-			text_at("*",rect.position+Vector2(rect.size.x-17,17),16,WHITE)
+		text_at(hp_text,rect.get_center()+Vector2(-tw/2,3 if b.kind != "boss" else 13),size,WHITE)
+		var bar_rect = Rect2(rect.position+Vector2(7,rect.size.y-12),Vector2(rect.size.x-14,5 if b.kind != "boss" else 8))
+		draw_rect(bar_rect,Color("07101d",0.9))
+		draw_rect(Rect2(bar_rect.position,Vector2(bar_rect.size.x*clampf(float(b.hp)/maxf(1,b.max_hp),0,1),bar_rect.size.y)),color)
 		if b.kind == "boss":
-			draw_rect(Rect2(rect.position+Vector2(12,rect.size.y-14),Vector2((rect.size.x-24)*maxf(0,b.hp)/b.max_hp,3)),color)
+			panel(Rect2(rect.position+Vector2(8,7),Vector2(60,24)),Color("3c275a"),Color("b59aff"),6)
+			text_at("BOSS",rect.position+Vector2(17,25),13,WHITE)
+		if b.frozen > 0:
+			draw_ice_overlay(rect)
 	for effect in model.effects:
-		var alpha = effect.life/0.4
-		draw_arc(effect.p,effect.r*(1-alpha)+3,0,TAU,24,Color(effect.color,alpha*0.7),2,true)
+		draw_skill_effect(effect)
 	for ball in sim.balls:
 		if tier > 0 and not manual_fast and volley_time < 9:
 			draw_line(ball.p-ball.v.normalized()*16,ball.p,Color(MINT,0.3),5,true)
@@ -458,7 +610,9 @@ func draw_game():
 		else:
 			centered("드래그하여 조준 · 손을 놓아 발사" if armed == "" else "스킬 조준 중 · 손을 놓아 사용",941,18,MUTED)
 	text_at("●  %d ORBS" % model.logical_balls(),Vector2(39,1025),19,MINT)
-	text_at("%d FPS   SIM %.1f ms" % [Engine.get_frames_per_second(),simulation_ms] if animation_time > 3 else "PERFORMANCE WARMUP",Vector2(446,1025),14,MUTED)
+	if state == "aim" and not model.lab:
+		button(Rect2(188,994,300,43),"공 +1 · %d POINT"%model.multiball_cost(),func(): purchase_ball(),model.can_buy_multiball())
+	text_at("%d FPS" % Engine.get_frames_per_second() if animation_time > 3 else "WARMUP",Vector2(594,1025),13,MUTED)
 	var passive_index = 0
 	for id in model.skills:
 		if model.config.skills[id].type != "passive": continue
@@ -519,7 +673,7 @@ func draw_overlay():
 			text_at(model.config.skills[recipe.a].name+" + "+model.config.skills[recipe.b].name,rect.position+Vector2(24,39),20,MUTED)
 			text_at(model.config.skills[recipe.result].name+"  →",rect.position+Vector2(24,86),33,PURPLE)
 			text_at("2 SLOTS → 1 SLOT    /    융합 Lv.1",rect.position+Vector2(24,128),17,WHITE)
-			buttons.append({"rect":rect,"action":func(): model.fuse(recipe); notify("융합 완료! 슬롯 하나가 비었습니다."); state="aim" if fusion_from_aim else "resolve"; finish_fusion()})
+			buttons.append({"rect":rect,"action":func(): apply_fusion(recipe)})
 		button(Rect2(180,1014,360,65),"지금은 유지",func(): state="aim" if fusion_from_aim else "resolve"; finish_fusion())
 	elif state == "forge":
 		centered("CORE DESTROYED",244,18,MINT)
@@ -546,8 +700,8 @@ func draw_overlay():
 		centered("CORE SECURED" if cleared else "SIGNAL LOST",266,19,MINT if cleared else Color("ff7d9b"))
 		centered("RUN CLEAR" if cleared else "DIVE OVER",348,58)
 		centered("ROUND %02d    /    LEVEL %02d"%[model.round_no,model.level],422,27,MUTED)
-		centered("%06d"%model.score,531,70,MINT)
-		centered("SCORE",570,18,MUTED)
+		centered("%06d"%model.points,531,70,MINT)
+		centered("POINT",570,18,MUTED)
 		centered("충돌 %d회   ·   파괴 %d개"%[model.hits,model.kills],650,24)
 		if cleared:
 			button(Rect2(100,765,520,74),"ENDLESS 계속하기",func(): model.endless=true; next_round(),true)
@@ -560,6 +714,21 @@ func finish_fusion():
 		finish_rewards()
 	else:
 		model.save_run()
+
+func apply_fusion(recipe: Dictionary):
+	if not model.fuse(recipe):
+		return
+	var result = String(recipe.result)
+	var kind = {"pierce_bomb":"pierce_bomb","thunder_swarm":"thunder_swarm","orbital_strike":"orbital_beam"}.get(result,"burst")
+	var extra = {}
+	if result == "thunder_swarm":
+		extra.targets = model.bricks.map(func(b): return model.brick_rect(b).get_center())
+	elif result == "orbital_strike":
+		extra = {"from":Vector2(model.launch_x,Simulation.RETURN_Y),"to":Vector2(360,280)}
+	model.emit_effect(Vector2(360,610),Color(model.config.skills[result].color),260,kind,1.1,extra)
+	notify("융합 완료! 슬롯 하나가 비었습니다.")
+	state="aim" if fusion_from_aim else "resolve"
+	finish_fusion()
 
 func draw_settings():
 	text_at("PREFERENCES",Vector2(48,193),18,MINT)

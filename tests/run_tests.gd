@@ -37,6 +37,19 @@ func run():
 	var levels=0
 	while m.consume_level(): levels+=1
 	check(levels==4 and m.level==5 and m.xp==7,"XP overflow produces four choices and preserves remainder")
+	m.reset()
+	m.points=300
+	check(m.multiball_cost()==100 and m.buy_multiball() and m.logical_balls()==9 and m.points==200,"One click buys exactly one ball and deducts POINT")
+	check(m.multiball_cost()==150 and m.buy_multiball() and m.logical_balls()==10 and m.points==50,"Next ball costs more than the previous ball")
+	check(not m.buy_multiball() and m.logical_balls()==10,"Insufficient POINT cannot buy a ball")
+	check(not m.card_pool().has("multi"),"Multi Ball is excluded from random level-up cards")
+	m.reset()
+	m.points=999999
+	for i in range(40):
+		check(m.buy_multiball(),"Single-ball purchase %d succeeds"%(i+1))
+	m.skills.lightning=5
+	var balls_before_fusion=m.logical_balls()
+	check(m.skill_level("multi")==5 and m.fuse(m.config.fusions[1]) and m.logical_balls()==balls_before_fusion,"Thunder Swarm fusion preserves purchased ball count")
 	m.skills={"multi":5,"lightning":5,"pierce":5,"blast":5,"power":5,"frost":5,"laser":5,"bomb":5,"freeze":5,"stop":5}
 	check(m.count_type("passive")==6 and m.count_type("active")==4,"Skill slot caps")
 	check(not m.apply_card("critical"),"New passive rejected when six slots are full")
@@ -88,14 +101,27 @@ func run():
 	m.area_damage(Vector2.ZERO,1000,10,5,"test")
 	check(not m.has_events(),"Events beyond chain depth four are rejected")
 	m.reset()
+	m.bricks.clear()
+	m.add_brick(2,0,10,"normal")
+	m.add_brick(3,1,10,"normal")
+	m.add_brick(4,0,10,"normal")
+	m.round_no=10
+	m.spawn_row()
+	var bosses=m.bricks.filter(func(brick): return brick.kind=="boss")
+	check(bosses.size()==1,"Boss spawns once on round ten")
+	var boss=bosses[0]
+	check(not m.bricks.any(func(brick): return brick.id!=boss.id and m.overlaps_cells(brick,boss.col,boss.row,boss.w,boss.h)),"Boss spawn area never overlaps a regular brick")
+	m.reset()
 	m.skills={"multi":2,"laser":1}
+	m.purchased_balls=16
+	m.points=1250
 	m.round_no=7
 	m.launch_x=198.0
 	m.cooldowns={"laser":3}
 	m.save_run()
 	var expected_rng=m.rng.randf()
 	var restored=Model.new()
-	check(restored.load_run() and restored.round_no==7 and restored.launch_x==198 and restored.cooldowns.laser==3 and restored.skills.multi==2,"Round snapshot restores gameplay state")
+	check(restored.load_run() and restored.round_no==7 and restored.launch_x==198 and restored.cooldowns.laser==3 and restored.skills.multi==2 and restored.purchased_balls==16 and restored.points==1250,"Round snapshot restores gameplay state and POINT purchases")
 	check(restored.rng.randf()==expected_rng,"Save restores deterministic random state")
 	var bad=FileAccess.open(Model.SAVE_PATH,FileAccess.WRITE)
 	bad.store_string("{corrupted")
