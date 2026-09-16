@@ -1,0 +1,1122 @@
+[
+  {
+    "id": "power",
+    "name": "파워 코어",
+    "category": "passive",
+    "sources": [
+      "power"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "pierce",
+    "name": "관통",
+    "category": "passive",
+    "sources": [
+      "pierce"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "blast",
+    "name": "폭발",
+    "category": "passive",
+    "sources": [
+      "blast"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "lightning",
+    "name": "연쇄 번개",
+    "category": "passive",
+    "sources": [
+      "lightning"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "frost",
+    "name": "서리",
+    "category": "passive",
+    "sources": [
+      "frost"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "critical",
+    "name": "크리티컬",
+    "category": "passive",
+    "sources": [
+      "critical"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "wall",
+    "name": "월 차지",
+    "category": "passive",
+    "sources": [
+      "wall"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "corrosion",
+    "name": "부식",
+    "category": "passive",
+    "sources": [
+      "corrosion"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "bounty",
+    "name": "현상금 회로",
+    "category": "passive",
+    "sources": [
+      "bounty"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "split",
+    "name": "분열 코어",
+    "category": "passive",
+    "sources": [
+      "split"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "resonance",
+    "name": "공명 코어",
+    "category": "passive",
+    "sources": [
+      "resonance"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "ricochet",
+    "name": "리바운드",
+    "category": "passive",
+    "sources": [
+      "ricochet"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "laser",
+    "name": "레이저",
+    "category": "active",
+    "sources": [
+      "laser"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "bomb",
+    "name": "폭격",
+    "category": "active",
+    "sources": [
+      "bomb"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "freeze",
+    "name": "빙결 파동",
+    "category": "active",
+    "sources": [
+      "freeze"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "mark",
+    "name": "표적 지정",
+    "category": "active",
+    "sources": [
+      "mark"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "overclock",
+    "name": "오버클럭",
+    "category": "active",
+    "sources": [
+      "overclock"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "pulse",
+    "name": "펄스 캐논",
+    "category": "active",
+    "sources": [
+      "pulse"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "missile",
+    "name": "유도 미사일",
+    "category": "active",
+    "sources": [
+      "missile"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "echo",
+    "name": "에코 발사",
+    "category": "active",
+    "sources": [
+      "echo"
+    ],
+    "description": "기본 스킬 전용 연출"
+  },
+  {
+    "id": "power__pierce",
+    "name": "초관통포",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "pierce"
+    ],
+    "description": "관통 공의 청백색 창 중심에 주황 코어가 생긴다. 벽돌을 통과할 때마다 코어가 커지고 다섯 번째 관통에서 굵은 백색 직선 파동이 터진다."
+  },
+  {
+    "id": "power__blast",
+    "name": "과충전 핵폭발",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "blast"
+    ],
+    "description": "벽돌 파괴 직전 주황 에너지가 중심으로 수축하고 초과 피해 방향의 주변 칸으로 격자형 폭발이 퍼진다."
+  },
+  {
+    "id": "power__lightning",
+    "name": "고전압 코어",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "lightning"
+    ],
+    "description": "충돌마다 주황 코어에 보라 전류가 축적된다. 여덟 번째 충돌에서 코어가 갈라지며 네 방향 낙뢰가 떨어진다."
+  },
+  {
+    "id": "power__frost",
+    "name": "빙결 분쇄기",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "frost"
+    ],
+    "description": "얼어붙은 벽돌 안에 주황 균열이 번지고 파괴 순간 얼음과 불꽃이 함께 바깥으로 튄다."
+  },
+  {
+    "id": "power__critical",
+    "name": "초월 코어",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "critical"
+    ],
+    "description": "공 중심에 금색 다이아 코어가 회전한다. 치명타 순간 코어가 확대되고 이중 십자 충격파가 발생한다."
+  },
+  {
+    "id": "power__wall",
+    "name": "반사 증폭기",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "wall"
+    ],
+    "description": "벽 반사마다 주황 충전 고리가 하나씩 추가된다. 세 번째 반사 후 공이 백색으로 변하고 다음 충돌에 대형 원형 충격파가 발생한다."
+  },
+  {
+    "id": "power__corrosion",
+    "name": "용해 코어",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "corrosion"
+    ],
+    "description": "주황 코어에 녹색 액체가 차오른다. 부식 5중첩에서 벽돌 내부가 녹아내리며 녹색·주황 복합 폭발이 난다."
+  },
+  {
+    "id": "power__bounty",
+    "name": "현상금 사냥꾼",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "bounty"
+    ],
+    "description": "금색 표적선과 주황 탄도가 연결된다. 표적 적중 시 표적선이 안쪽으로 조여지고 파괴 시 큰 POINT 파편이 솟는다."
+  },
+  {
+    "id": "power__split",
+    "name": "중포 분열체",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "split"
+    ],
+    "description": "분열 직전 공의 코어가 두 개로 나뉘고 동일 크기의 주황 코어 공 두 개가 좌우로 벌어진다."
+  },
+  {
+    "id": "power__resonance",
+    "name": "공명 증폭로",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "resonance"
+    ],
+    "description": "공명 동심원이 주황색으로 과열된다. 발동 시 여러 동심원이 동시에 팽창하며 굵은 원형 충격파를 만든다."
+  },
+  {
+    "id": "power__ricochet",
+    "name": "반동 발전기",
+    "category": "passive_fusion",
+    "sources": [
+      "power",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 파워 코어 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "pierce__blast",
+    "name": "관통 폭탄",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "blast"
+    ],
+    "description": "관통 공이 벽돌을 빠져나오는 순간 해당 칸을 중심으로 십자 또는 8방향 격자 폭발이 발생한다."
+  },
+  {
+    "id": "pierce__lightning",
+    "name": "전도 관통",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "lightning"
+    ],
+    "description": "관통 공의 잔상에 보라 전류가 흐른다. 통과한 벽돌들이 청백색 선으로 연결된 뒤 번개가 역순으로 달린다."
+  },
+  {
+    "id": "pierce__frost",
+    "name": "빙창",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "frost"
+    ],
+    "description": "관통 공이 긴 얼음 창으로 변한다. 통과 경로에 성에가 남고 같은 열의 다음 벽돌까지 얼음 결정이 뻗는다."
+  },
+  {
+    "id": "pierce__critical",
+    "name": "사형선",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "critical"
+    ],
+    "description": "관통 치명타 경로가 잠깐 백색으로 고정되고 HP가 낮은 벽돌에는 가는 수평 절단선이 지나간다."
+  },
+  {
+    "id": "pierce__wall",
+    "name": "궤도 절삭기",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "wall"
+    ],
+    "description": "벽 반사 위치에 청백색 칼날 섬광이 생기고 다음 관통 경로가 넓은 검광 형태로 변한다."
+  },
+  {
+    "id": "pierce__corrosion",
+    "name": "부식 천공",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "corrosion"
+    ],
+    "description": "관통 공 뒤로 녹색 산성 직선이 남는다. 통과한 모든 벽돌 표면이 순서대로 녹아내린다."
+  },
+  {
+    "id": "pierce__bounty",
+    "name": "추적 관통탄",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "bounty"
+    ],
+    "description": "관통 공과 현상금 표적 사이에 가는 금청색 유도선이 생기고 공이 부드럽게 방향을 보정한다."
+  },
+  {
+    "id": "pierce__split",
+    "name": "분열 창",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "split"
+    ],
+    "description": "분열된 새 공이 즉시 작은 청백색 창으로 변한다. 원본과 자식의 두 관통 궤적이 갈라지는 Y자 잔상을 만든다."
+  },
+  {
+    "id": "pierce__resonance",
+    "name": "공명 터널",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "resonance"
+    ],
+    "description": "관통 공이 지나갈 때 벽돌 내부에 동심원 두 겹이 빠르게 찍힌다. 연속 벽돌에는 하나의 긴 진동 터널이 남는다."
+  },
+  {
+    "id": "pierce__ricochet",
+    "name": "재진입 화살",
+    "category": "passive_fusion",
+    "sources": [
+      "pierce",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 관통 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "blast__lightning",
+    "name": "플라즈마 폭풍",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "lightning"
+    ],
+    "description": "격자 폭발이 끝나는 각 칸에서 보라 번개가 인접 생존 벽돌로 분기한다."
+  },
+  {
+    "id": "blast__frost",
+    "name": "빙폭",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "frost"
+    ],
+    "description": "화염 중심을 하늘색 얼음 고리가 감싸며 폭발 범위가 즉시 결빙된다. 동결 벽돌 파괴 시 작은 2차 얼음 폭발이 난다."
+  },
+  {
+    "id": "blast__critical",
+    "name": "치명적 연쇄폭발",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "critical"
+    ],
+    "description": "치명타 폭발은 금색 십자 섬광 후 평소보다 큰 8방향 충격파와 두꺼운 테두리를 사용한다."
+  },
+  {
+    "id": "blast__wall",
+    "name": "반향 폭탄",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "wall"
+    ],
+    "description": "벽 반사마다 공 주위의 폭탄 고리가 커진다. 충전된 폭발은 벽면 파동이 중심 폭발로 되돌아오는 연출을 쓴다."
+  },
+  {
+    "id": "blast__corrosion",
+    "name": "산성 폭탄",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "corrosion"
+    ],
+    "description": "화염 대신 녹색 액체 구름이 격자 칸으로 퍼지고 벽돌에 기포와 부식 균열이 남는다."
+  },
+  {
+    "id": "blast__bounty",
+    "name": "황금 폭약",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "bounty"
+    ],
+    "description": "표적 파괴 시 금색 폭발 안에서 동전 파편이 주변 8칸으로 날아가 충돌한다."
+  },
+  {
+    "id": "blast__split",
+    "name": "집속탄",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "split"
+    ],
+    "description": "폭발 중심에서 자홍색 작은 공들이 씨앗처럼 튀어나오며 각 분열 판정 방향으로 흩어진다."
+  },
+  {
+    "id": "blast__resonance",
+    "name": "공명 폭뢰",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "resonance"
+    ],
+    "description": "공명 동심원이 최대 크기에 도달한 뒤 격자 경계에 맞춰 각진 폭발 파동으로 변한다."
+  },
+  {
+    "id": "blast__ricochet",
+    "name": "리바운드 폭격",
+    "category": "passive_fusion",
+    "sources": [
+      "blast",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 폭발 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "lightning__frost",
+    "name": "빙뢰",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "frost"
+    ],
+    "description": "하늘색 낙뢰가 떨어지고 전류 경로에 눈꽃 결정이 자란다. 동결 대상에서는 더 굵은 백색 번개가 터진다."
+  },
+  {
+    "id": "lightning__critical",
+    "name": "천벌",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "critical"
+    ],
+    "description": "치명타 십자 위에 원형 구름이 열리고 굵은 금보라 낙뢰가 수직으로 떨어진다."
+  },
+  {
+    "id": "lightning__wall",
+    "name": "벽면 송전",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "wall"
+    ],
+    "description": "세 번째 반사 때 벽 전체를 보라 전류가 달리고 전류에서 가까운 벽돌로 번개 가지가 뻗는다."
+  },
+  {
+    "id": "lightning__corrosion",
+    "name": "부식 전류",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "corrosion"
+    ],
+    "description": "번개가 녹색과 보라색 두 줄로 꼬이며 이동하고 다음 벽돌에 같은 부식 균열이 복제된다."
+  },
+  {
+    "id": "lightning__bounty",
+    "name": "현상금 뇌격",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "bounty"
+    ],
+    "description": "번개 적중 벽돌의 모서리에 금색 조준선이 잠깐 잠기고 표적 파괴 시 추가 수직 낙뢰가 떨어진다."
+  },
+  {
+    "id": "lightning__split",
+    "name": "분기 번개",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "split"
+    ],
+    "description": "자홍 분열 공의 첫 충돌에서 좌우 두 갈래의 작은 보라 번개가 갈라진다."
+  },
+  {
+    "id": "lightning__resonance",
+    "name": "공명 낙뢰",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "resonance"
+    ],
+    "description": "공명 동심원이 안으로 수축한 순간 중심에서 네 방향 번개가 방사된다."
+  },
+  {
+    "id": "lightning__ricochet",
+    "name": "반동 뇌격",
+    "category": "passive_fusion",
+    "sources": [
+      "lightning",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 연쇄 번개 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "frost__critical",
+    "name": "빙결 처형",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "critical"
+    ],
+    "description": "동결 벽돌에 금색 균열이 먼저 생기고 치명타 순간 큰 얼음 조각으로 산산이 부서진다."
+  },
+  {
+    "id": "frost__wall",
+    "name": "빙하 도탄",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "wall"
+    ],
+    "description": "벽 반사 위치에서 부채꼴 얼음 창 세 개가 발사되고 벽면에 잠깐 성에가 남는다."
+  },
+  {
+    "id": "frost__corrosion",
+    "name": "동상 부식",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "corrosion"
+    ],
+    "description": "얼음 아래에 녹색 균열이 쌓인다. 동결 해제 시 얼음과 산성 액체가 동시에 바깥으로 터진다."
+  },
+  {
+    "id": "frost__bounty",
+    "name": "냉동 현상금",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "bounty"
+    ],
+    "description": "금색 조준선이 얼음에 갇혀 보이고 파괴 시 얼음 속 동전이 주변 벽돌로 튄다."
+  },
+  {
+    "id": "frost__split",
+    "name": "서리 분신",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "split"
+    ],
+    "description": "분열된 공이 작은 눈꽃 코어를 갖고 첫 충돌에서 육각 얼음 결정이 벽돌을 감싼다."
+  },
+  {
+    "id": "frost__resonance",
+    "name": "빙정 공명",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "resonance"
+    ],
+    "description": "공명 동심원이 얼음 결정 모양으로 바뀌고 발동 시 여섯 방향 서리 파동이 퍼진다."
+  },
+  {
+    "id": "frost__ricochet",
+    "name": "서리 반동",
+    "category": "passive_fusion",
+    "sources": [
+      "frost",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 서리 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "critical__wall",
+    "name": "리코셰 헤드샷",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "wall"
+    ],
+    "description": "벽 반사 지점에 금색 조준경이 펼쳐지고 다음 벽돌까지 가는 직선이 잠깐 강조된다."
+  },
+  {
+    "id": "critical__corrosion",
+    "name": "괴사 치명타",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "corrosion"
+    ],
+    "description": "금색 십자가 녹색 균열을 한 점으로 끌어모은 뒤 검녹색 내부 폭발을 일으킨다."
+  },
+  {
+    "id": "critical__bounty",
+    "name": "잭팟",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "bounty"
+    ],
+    "description": "표적 치명타 처치 시 숫자 슬롯이 빠르게 회전해 같은 숫자에 멈추고 동전이 폭발한다."
+  },
+  {
+    "id": "critical__split",
+    "name": "치명적 분신",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "split"
+    ],
+    "description": "분열 공에 작은 금색 별 코어가 생기고 첫 적중에서 짧고 날카로운 십자 섬광이 난다."
+  },
+  {
+    "id": "critical__resonance",
+    "name": "임계 공명",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "resonance"
+    ],
+    "description": "공명 고리가 금색으로 변하고 수축 후 대형 십자 파동과 동심원이 동시에 펼쳐진다."
+  },
+  {
+    "id": "critical__ricochet",
+    "name": "치명적 재진입",
+    "category": "passive_fusion",
+    "sources": [
+      "critical",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 크리티컬 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "wall__corrosion",
+    "name": "산성 궤적",
+    "category": "passive_fusion",
+    "sources": [
+      "wall",
+      "corrosion"
+    ],
+    "description": "벽 반사 위치에서 녹색 액체 파동이 벽을 타고 흐른 뒤 가까운 벽돌 두 개에 튄다."
+  },
+  {
+    "id": "wall__bounty",
+    "name": "은행 사격",
+    "category": "passive_fusion",
+    "sources": [
+      "wall",
+      "bounty"
+    ],
+    "description": "벽 반사 때마다 벽면에 금화 고리가 하나씩 쌓이고 표적 처치 시 고리들이 POINT 영역으로 날아간다."
+  },
+  {
+    "id": "wall__split",
+    "name": "거울 군단",
+    "category": "passive_fusion",
+    "sources": [
+      "wall",
+      "split"
+    ],
+    "description": "벽이 순간적으로 거울처럼 밝아지고 반사 공 옆에서 반투명 공이 분리되어 실체화된다."
+  },
+  {
+    "id": "wall__resonance",
+    "name": "반향 공명",
+    "category": "passive_fusion",
+    "sources": [
+      "wall",
+      "resonance"
+    ],
+    "description": "벽면의 민트 파동이 마지막 피격 벽돌까지 직선으로 이동해 내부 동심원을 한 겹 추가한다."
+  },
+  {
+    "id": "wall__ricochet",
+    "name": "왕복 동력로",
+    "category": "passive_fusion",
+    "sources": [
+      "wall",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 월 차지 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "corrosion__bounty",
+    "name": "역병 현상금",
+    "category": "passive_fusion",
+    "sources": [
+      "corrosion",
+      "bounty"
+    ],
+    "description": "금색 표적 벽돌의 녹색 균열이 상하좌우 벽돌로 뿌리처럼 번진다."
+  },
+  {
+    "id": "corrosion__split",
+    "name": "감염 분열체",
+    "category": "passive_fusion",
+    "sources": [
+      "corrosion",
+      "split"
+    ],
+    "description": "분열 공이 작은 녹색 유기체 형태가 되고 부식되지 않은 벽돌 쪽으로 짧게 궤도를 보정한다."
+  },
+  {
+    "id": "corrosion__resonance",
+    "name": "부식 공진",
+    "category": "passive_fusion",
+    "sources": [
+      "corrosion",
+      "resonance"
+    ],
+    "description": "녹색 균열을 따라 청록 진동선이 왕복하고 모든 균열이 동시에 한 번 밝게 맥동한다."
+  },
+  {
+    "id": "corrosion__ricochet",
+    "name": "산성 반동",
+    "category": "passive_fusion",
+    "sources": [
+      "corrosion",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 부식 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "bounty__split",
+    "name": "복제 채굴기",
+    "category": "passive_fusion",
+    "sources": [
+      "bounty",
+      "split"
+    ],
+    "description": "분열 공이 금색 드론처럼 변해 표적을 향하고 처치 시 새 표적으로 가는 가는 유도선이 이어진다."
+  },
+  {
+    "id": "bounty__resonance",
+    "name": "공명 채권",
+    "category": "passive_fusion",
+    "sources": [
+      "bounty",
+      "resonance"
+    ],
+    "description": "표적의 동심원이 금색으로 채워지며 공명 발동 순간 작은 POINT 파편이 즉시 상단으로 이동한다."
+  },
+  {
+    "id": "bounty__ricochet",
+    "name": "보물 재도전",
+    "category": "passive_fusion",
+    "sources": [
+      "bounty",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 현상금 회로 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "split__resonance",
+    "name": "공명 증식체",
+    "category": "passive_fusion",
+    "sources": [
+      "split",
+      "resonance"
+    ],
+    "description": "공명 폭발 중심에서 자홍색 세포핵이 여러 개로 갈라지고 새 공이 방사형으로 생성된다."
+  },
+  {
+    "id": "split__ricochet",
+    "name": "반동 증식체",
+    "category": "passive_fusion",
+    "sources": [
+      "split",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 분열 코어 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "resonance__ricochet",
+    "name": "반동 공명",
+    "category": "passive_fusion",
+    "sources": [
+      "resonance",
+      "ricochet"
+    ],
+    "description": "바닥에서 반사한 공에 공명 코어 연출을 결합. REBOUND 텍스트와 재진입 궤적 표시."
+  },
+  {
+    "id": "laser__bomb",
+    "name": "궤도 폭격",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "bomb"
+    ],
+    "description": "반사 레이저가 지나간 경로에 원형 폭격 좌표가 차례로 찍히고 0.15초 간격으로 폭탄이 낙하한다."
+  },
+  {
+    "id": "laser__freeze",
+    "name": "빙결 광선",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "freeze"
+    ],
+    "description": "청백색 반사 광선 주변에 눈 결정이 회전하고 지나간 벽돌이 경로 순서대로 얼어붙는다."
+  },
+  {
+    "id": "laser__mark",
+    "name": "정밀 소각",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "mark"
+    ],
+    "description": "금색 표적선과 반사 경로가 결합해 최적 경로를 표시한다. 표적 통과 순간 광선이 굵어지고 중심이 백색으로 변한다."
+  },
+  {
+    "id": "laser__overclock",
+    "name": "초광속 포격",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "overclock"
+    ],
+    "description": "같은 반사 경로를 세 개의 얇은 광선이 짧은 간격으로 달리고 마지막 광선에서 큰 프리즘 섬광이 난다."
+  },
+  {
+    "id": "laser__pulse",
+    "name": "프리즘 절단",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "pulse"
+    ],
+    "description": "벽 반사 지점마다 프리즘이 생성되고 해당 위치에서 가로·세로 펄스가 동시에 발사된다."
+  },
+  {
+    "id": "laser__missile",
+    "name": "광학 유도탄",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "missile"
+    ],
+    "description": "레이저가 맞힌 벽돌에 빛 좌표가 남고 화면 양옆의 미사일이 그 좌표로 곡선 비행한다."
+  },
+  {
+    "id": "laser__echo",
+    "name": "잔류 광선",
+    "category": "active_fusion",
+    "sources": [
+      "laser",
+      "echo"
+    ],
+    "description": "본 광선이 사라진 뒤 반투명한 보라 잔상이 같은 반사 경로를 두 번 빠르게 재주행한다."
+  },
+  {
+    "id": "bomb__freeze",
+    "name": "빙하 폭격",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "freeze"
+    ],
+    "description": "거대한 얼음 운석이 낙하하고 충돌 지점에서 화염 대신 육각 얼음 지대가 주변 8칸으로 퍼진다."
+  },
+  {
+    "id": "bomb__mark",
+    "name": "유도 궤도탄",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "mark"
+    ],
+    "description": "표적 위의 금색 조준선에 여섯 개의 작은 낙하 좌표가 모이고 폭탄이 나선형으로 집중된다."
+  },
+  {
+    "id": "bomb__overclock",
+    "name": "포화 폭격",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "overclock"
+    ],
+    "description": "넓은 경고 영역 안에 작은 경고 원들이 빠르게 교차 점멸하고 고속 폭탄이 연속 낙하한다."
+  },
+  {
+    "id": "bomb__pulse",
+    "name": "충격파 폭탄",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "pulse"
+    ],
+    "description": "중심 폭발 후 가로·세로 네 방향으로 굵은 광파가 필드 끝까지 진행한다."
+  },
+  {
+    "id": "bomb__missile",
+    "name": "집속 미사일",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "missile"
+    ],
+    "description": "대형 폭탄이 공중에서 열리고 작은 유도탄들이 부채꼴로 분리돼 각 목표로 날아간다."
+  },
+  {
+    "id": "bomb__echo",
+    "name": "지연 폭격",
+    "category": "active_fusion",
+    "sources": [
+      "bomb",
+      "echo"
+    ],
+    "description": "첫 폭발 뒤 지면에 붉은 잔광 원이 남고 원이 다시 차오르면 두 번째 폭발이 발생한다."
+  },
+  {
+    "id": "freeze__mark",
+    "name": "빙결 사냥",
+    "category": "active_fusion",
+    "sources": [
+      "freeze",
+      "mark"
+    ],
+    "description": "전체 한파가 지나간 뒤 선택 표적 주위에 두꺼운 얼음 감옥과 금색 조준선이 함께 고정된다."
+  },
+  {
+    "id": "freeze__overclock",
+    "name": "극저온 과급",
+    "category": "active_fusion",
+    "sources": [
+      "freeze",
+      "overclock"
+    ],
+    "description": "필드 결빙 후 모든 대기 공이 얼음 탄환으로 변하고 발사대에 청백색 속도선이 모인다."
+  },
+  {
+    "id": "freeze__pulse",
+    "name": "절대 영도",
+    "category": "active_fusion",
+    "sources": [
+      "freeze",
+      "pulse"
+    ],
+    "description": "화면 전체가 짧게 백색으로 식고 모든 벽돌 안쪽에서 얼음 결정과 십자 펄스가 동시에 터진다."
+  },
+  {
+    "id": "freeze__missile",
+    "name": "빙창 미사일",
+    "category": "active_fusion",
+    "sources": [
+      "freeze",
+      "missile"
+    ],
+    "description": "얼어붙은 목표 위로 하늘색 잠금선이 생기고 미사일이 긴 얼음 창 형태로 낙하한다."
+  },
+  {
+    "id": "freeze__echo",
+    "name": "이중 한파",
+    "category": "active_fusion",
+    "sources": [
+      "freeze",
+      "echo"
+    ],
+    "description": "첫 파동 뒤 화면 가장자리에 성에가 유지되고 다음 라운드 시작에 성에가 깨지며 두 번째 파동이 발생한다."
+  },
+  {
+    "id": "mark__overclock",
+    "name": "헌터 프로토콜",
+    "category": "active_fusion",
+    "sources": [
+      "mark",
+      "overclock"
+    ],
+    "description": "표적에서 모든 대기 공으로 붉은 유도선이 뻗고 발사된 공의 잔상이 표적 방향으로 부드럽게 휜다."
+  },
+  {
+    "id": "mark__pulse",
+    "name": "처형 좌표",
+    "category": "active_fusion",
+    "sources": [
+      "mark",
+      "pulse"
+    ],
+    "description": "표적을 중심으로 가로·세로 붉은 조준축이 필드 끝까지 펼쳐지고 교차점에서 대형 백색 펄스가 폭발한다."
+  },
+  {
+    "id": "mark__missile",
+    "name": "섬멸 지정",
+    "category": "active_fusion",
+    "sources": [
+      "mark",
+      "missile"
+    ],
+    "description": "표적 주위에 열 개의 잠금 점이 원형으로 채워지고 미사일이 원을 따라 차례로 충돌한다."
+  },
+  {
+    "id": "mark__echo",
+    "name": "끈질긴 추적",
+    "category": "active_fusion",
+    "sources": [
+      "mark",
+      "echo"
+    ],
+    "description": "첫 발사 종료 후 표적선이 사라지지 않고 희미하게 유지되며 두 번째 발사 때 다시 선명해진다."
+  },
+  {
+    "id": "overclock__pulse",
+    "name": "과급 펄스",
+    "category": "active_fusion",
+    "sources": [
+      "overclock",
+      "pulse"
+    ],
+    "description": "선택 십자선에 주황 전력이 차오르고 세 번의 펄스가 점점 빠르고 밝게 발사된다."
+  },
+  {
+    "id": "overclock__missile",
+    "name": "극초음속 탄막",
+    "category": "active_fusion",
+    "sources": [
+      "overclock",
+      "missile"
+    ],
+    "description": "미사일들이 짧은 직선 잔상을 남기며 거의 동시에 목표에 도착하고 연속 소형 충격파를 만든다."
+  },
+  {
+    "id": "overclock__echo",
+    "name": "트윈 드라이브",
+    "category": "active_fusion",
+    "sources": [
+      "overclock",
+      "echo"
+    ],
+    "description": "본 발사 공은 주황 고속 잔상, 에코 공은 보라 반투명 잔상을 사용해 두 대열을 명확히 구분한다."
+  },
+  {
+    "id": "pulse__missile",
+    "name": "격자 섬멸",
+    "category": "active_fusion",
+    "sources": [
+      "pulse",
+      "missile"
+    ],
+    "description": "십자 펄스가 지나간 칸에 작은 빛 좌표가 남고 유도 미사일이 생존 좌표로 분산된다."
+  },
+  {
+    "id": "pulse__echo",
+    "name": "공명 포격",
+    "category": "active_fusion",
+    "sources": [
+      "pulse",
+      "echo"
+    ],
+    "description": "첫 십자 펄스 뒤 교차점에 동심원이 남고 두 번의 반투명 펄스가 같은 축을 따라 재발동한다."
+  },
+  {
+    "id": "missile__echo",
+    "name": "귀환 미사일 군단",
+    "category": "active_fusion",
+    "sources": [
+      "missile",
+      "echo"
+    ],
+    "description": "첫 미사일 대열은 주황, 두 번째는 백색, 세 번째는 보라 잔상을 남긴다. 각 대열이 화면 가장자리를 돌아 새 목표로 재진입한다."
+  }
+]

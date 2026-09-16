@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><defs>
+<radialGradient id="glow"><stop stop-color="#fffef2"/><stop offset=".24" stop-color="#ffe596" stop-opacity=".95"/><stop offset=".55" stop-color="#ff7a20" stop-opacity=".6"/><stop offset="1" stop-color="#ff3214" stop-opacity="0"/></radialGradient>
+<radialGradient id="metal" cx=".3" cy=".22"><stop stop-color="#f2fbff"/><stop offset=".3" stop-color="#b4d5e5"/><stop offset=".65" stop-color="#47627b"/><stop offset="1" stop-color="#101a30"/></radialGradient>
+<linearGradient id="gold" x2=".8" y2="1"><stop stop-color="#fff9c2"/><stop offset=".25" stop-color="#ffe96c"/><stop offset=".5" stop-color="#d88b19"/><stop offset=".72" stop-color="#ffdc5a"/><stop offset="1" stop-color="#6f350f"/></linearGradient>
+<linearGradient id="ice" x2=".65" y2="1"><stop stop-color="#f4ffff"/><stop offset=".32" stop-color="#b5f6ff"/><stop offset=".63" stop-color="#5abbea" stop-opacity=".85"/><stop offset="1" stop-color="#204c99" stop-opacity=".6"/></linearGradient>
+<linearGradient id="wood" x2="0" y2="1"><stop stop-color="#b56b34"/><stop offset=".45" stop-color="#6d321e"/><stop offset="1" stop-color="#281322"/></linearGradient>
+<radialGradient id="white"><stop stop-color="#ffffff"/><stop offset=".25" stop-color="#e4faff" stop-opacity=".95"/><stop offset="1" stop-color="#a4eaff" stop-opacity="0"/></radialGradient>
+</defs><path d="M8 55L44 54 83 38 120 64 83 90 44 74 8 73 27 64Z" fill="url(#metal)" stroke="#18334f" stroke-width="3"/><path d="M86 40L120 64 86 88Z" fill="#ff5944"/><path d="M25 51L34 18 64 50M25 77L34 110 64 78" fill="#c2e5f2" stroke="#3d617b" stroke-width="3"/></svg>

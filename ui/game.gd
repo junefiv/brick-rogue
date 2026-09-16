@@ -40,11 +40,20 @@ var sound_player = AudioStreamPlayer.new()
 var simulation_ms = 0.0
 var longest_tick_ms = 0.0
 var screenshot_requested = false
+var vfx = preload("res://ui/vfx_director.gd").new()
+var health_layer = preload("res://ui/vfx_health.gd").new()
+var studio_index = 0
+var echo_in_progress = false
 
 func _ready():
 	font.base_font = preload("res://assets/NotoSansKR.ttf")
 	font.variation_opentype = {2003265652:550}
 	sim.setup(model)
+	add_child(vfx)
+	add_child(health_layer)
+	health_layer.z_index=3
+	health_layer.model=model
+	health_layer.font=font
 	load_settings()
 	add_child(sound_player)
 	sound_player.volume_db = -19
@@ -104,6 +113,8 @@ func _notification(what):
 			state = "pause"
 
 func start_run(lab: bool = false, resume: bool = false):
+	vfx.clear()
+	echo_in_progress=false
 	model.reset(lab)
 	if resume and not model.load_run():
 		notify("저장을 읽을 수 없어 새 게임을 시작합니다.")
@@ -150,7 +161,8 @@ func _process(delta):
 	animation_time += delta
 	toast_life = maxf(0, toast_life - delta)
 	inspected_skill_life = maxf(0, inspected_skill_life - delta)
-	model.vfx_budget = 0 if low_flash else model.config.vfx_caps[tier]
+	# Accessibility reduces flashes/particles, not readable impact and rebound cues.
+	model.vfx_budget = model.config.vfx_caps[tier]
 	if state not in ["pause","settings"]:
 		for effect in model.effects:
 			effect.life -= delta
@@ -165,6 +177,18 @@ func _process(delta):
 			sound_player.play()
 			hit_cache = model.hits
 			audio_clock = 0
+	var scene_visible = state in ["aim","flight","active_resolve","resolve","studio"]
+	vfx.visible=scene_visible
+	health_layer.visible=scene_visible and state!="studio"
+	vfx.process_mode=Node.PROCESS_MODE_INHERIT if scene_visible else Node.PROCESS_MODE_DISABLED
+	if state=="studio":
+		vfx.set_speed(1.0)
+		vfx.tick(delta)
+	elif scene_visible:
+		var fx_speed=4.0 if state=="flight" and (volley_time>=9 or manual_fast) else (2.0 if state=="flight" and volley_time>=6 else 1.0)
+		vfx.sync(model,sim,delta*fx_speed,tier,low_flash)
+		vfx.set_speed(fx_speed)
+		health_layer.queue_redraw()
 	queue_redraw()
 	if screenshot_requested and animation_time > 1:
 		screenshot_requested = false
@@ -180,6 +204,16 @@ func _physics_process(delta):
 		for substep in range(speed):
 			sim.step(delta)
 			if sim.finished() and not model.has_events():
+				if model.echo_ready and not echo_in_progress:
+					echo_in_progress=true
+					model.echo_ready=false
+					sim.fire(direction)
+					sim.count=maxi(1,int(sim.count*(0.2+0.1*model.skill_level("echo"))))
+					sim.weight*=0.6
+					model.emit_effect(Vector2(model.launch_x,900),PURPLE,60,"echo",0.7)
+					break
+				model.shot_boost=0.0
+				for b in model.bricks: b.marked=0.0
 				model.launch_x = sim.first_return if sim.first_return >= 0 else model.launch_x
 				state = "resolve"
 				resolve_levels()
@@ -187,6 +221,7 @@ func _physics_process(delta):
 		simulation_ms = (Time.get_ticks_usec() - began) / 1000.0
 		longest_tick_ms = maxf(longest_tick_ms, simulation_ms)
 	elif state == "active_resolve":
+		model.tick_delayed(delta)
 		model.drain_events()
 		if not model.has_events():
 			state = "aim"
@@ -249,6 +284,7 @@ func fire():
 	if state != "aim":
 		return
 	state = "flight"
+	echo_in_progress=false
 	volley_time = 0
 	manual_fast = false
 	hit_cache = model.hits
@@ -311,11 +347,21 @@ func active(id: String):
 	if int(model.cooldowns.get(id, 0)) > 0:
 		notify("%s 쿨다운 · %d라운드 후 다시 사용" % [model.config.skills[id].name, model.cooldowns[id]])
 		return
-	if id in ["laser", "bomb", "orbital_strike"]:
+	if id in ["laser", "bomb", "orbital_strike", "mark", "pulse"]:
 		armed = "" if armed == id else id
 		notify("방향을 조준하고 손을 놓으세요. 다시 누르면 취소합니다.")
 		return
-	if id == "freeze":
+	if id in ["overclock","echo"]:
+		if id=="overclock": model.shot_boost=0.05+0.05*model.skill_level(id)
+		else: model.echo_ready=true
+		model.emit_effect(Vector2(model.launch_x,870),Color(model.config.skills[id].color),60,id,0.7)
+	elif id=="missile":
+		var targets=model.bricks.filter(func(b): return b.hp>0)
+		targets.sort_custom(func(a,b): return a.hp>b.hp)
+		for i in range(3+model.skill_level(id)):
+			if targets.is_empty(): break
+			model.schedule_hit(targets[i%targets.size()],(3+model.skill_level(id))*model.damage(),"missile",0.3)
+	elif id == "freeze":
 		for b in model.bricks:
 			b.frozen = maxi(1, b.frozen)
 		model.emit_effect(Vector2(360, 620), Color("96edff"), 330, "freeze_wave", 1.1)
@@ -327,27 +373,44 @@ func active(id: String):
 
 func consume_active(id: String):
 	model.cooldowns[id] = maxi(2, int(model.config.skills[id].cooldown) - int((model.skill_level(id) - 1) / 2))
-	model.emit_effect(Vector2(360,600), Color(model.config.skills[id].color), 250)
+
 
 func use_targeted_active():
-	var id = armed
-	armed = ""
-	if id in ["laser", "orbital_strike"]:
-		var origin = Vector2(model.launch_x, Simulation.RETURN_Y)
-		var endpoint = origin + direction * 1500
-		model.emit_effect(endpoint, Color("ff7d9b") if id == "laser" else Color("ffbf69"), 80, "laser" if id == "laser" else "orbital_beam", 0.8, {"from":origin,"to":endpoint})
-		for b in model.bricks:
-			if Simulation.sweep_circle(origin, direction * 1500, model.brick_rect(b), 12).t <= 1:
-				model.enqueue(b, 12.0 * model.skill_level(id), 0, "active")
-				model.emit_effect(model.brick_rect(b).get_center(), Color("ff7d9b"), 55)
-				if id == "orbital_strike":
-					model.area_damage(model.brick_rect(b).get_center(), 170, 18.0 * model.skill_level(id), 0, "orbital")
+	var id=armed
+	armed=""
+	var level=model.skill_level(id)
+	if id in ["laser","orbital_strike"]:
+		var path=sim.laser_path(direction)
+		var struck: Dictionary={}
+		for i in range(path.size()-1):
+			model.emit_effect(path[i+1],Color("ff9bbc"),80,"laser",0.6,{"from":path[i],"to":path[i+1]})
+			for b in model.bricks:
+				if not struck.has(b.id) and Simulation.sweep_circle(path[i],path[i+1]-path[i],model.brick_rect(b),4).t<=1:
+					struck[b.id]=true
+					model.enqueue(b,(8+4*level)*model.damage(),0,"active")
+					if id=="orbital_strike": model.schedule_hit(b,18*model.damage(),"bomb_drop",0.3)
 	else:
-		var path = sim.aim_path(direction)
-		model.emit_effect(path.back(), Color("ffbf69"), 190, "bomb_drop", 0.9, {"from":path.back()-Vector2(0,180)})
-		model.area_damage(path.back(), 190, 15.0 * model.skill_level(id), 0, "active")
+		var path=sim.aim_path(direction)
+		var point: Vector2=path.back()
+		var targets=model.bricks.filter(func(b): return b.hp>0)
+		targets.sort_custom(func(a,b): return model.brick_rect(a).get_center().distance_squared_to(point)<model.brick_rect(b).get_center().distance_squared_to(point))
+		if not targets.is_empty():
+			var target=targets[0]
+			if id=="mark":
+				target.marked=0.15+0.15*level
+				model.emit_effect(model.brick_rect(target).get_center(),Color("ff677a"),70,"mark",0.6)
+			elif id=="pulse":
+				var center=model.brick_rect(target).get_center()
+				model.emit_effect(center,Color("b6efff"),60,"pulse",0.6,{"from":Vector2(45,center.y),"to":Vector2(675,center.y)})
+				model.emit_effect(center,Color("b6efff"),60,"pulse",0.6,{"from":Vector2(center.x,157),"to":Vector2(center.x,928)})
+				for b in targets:
+					if b.col==target.col or b.row==target.row: model.enqueue(b,(3+3*level)*model.damage(),0,"active")
+			else:
+				for b in targets:
+					if model.brick_rect(b).get_center().distance_to(point)<=150+10*(level-1):
+						model.schedule_hit(b,(10+5*level)*model.damage(),"bomb_drop",0.3)
 	consume_active(id)
-	state = "active_resolve"
+	state="active_resolve"
 
 func text_at(value: String, point: Vector2, size: int = 22, color: Color = WHITE):
 	draw_string(font, point, value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
@@ -565,6 +628,8 @@ func _draw():
 		draw_menu()
 	elif state == "settings":
 		draw_settings()
+	elif state == "studio":
+		draw_studio()
 	else:
 		draw_game()
 		if state in ["upgrade","fusion","forge","pause","result"]:
@@ -607,7 +672,7 @@ func draw_menu():
 	text_at("HOW TO PLAY",Vector2(70,1064),16,MINT)
 	text_at("드래그로 조준 → 손을 놓아 발사",Vector2(70,1100),24)
 	text_at("벽돌을 부수고 성장하세요. 위험선에 닿으면 종료됩니다.",Vector2(70,1134),17,MUTED)
-	centered("OFFLINE READY    /    ANDROID    /    GODOT",1210,15,MUTED)
+	button(Rect2(48,1170,624,65),"VFX STUDIO · 114개 연출",func(): state="studio"; vfx.preview_recipe(studio_index),false,PURPLE)
 
 func draw_game():
 	text_at("ROGUE / BREAKER",Vector2(38,35),19,WHITE)
@@ -648,14 +713,10 @@ func draw_game():
 		if b.kind == "boss":
 			panel(Rect2(rect.position+Vector2(8,7),Vector2(60,24)),Color("3c275a"),Color("b59aff"),6)
 			text_at("BOSS",rect.position+Vector2(17,25),13,WHITE)
-		if b.frozen > 0:
-			draw_ice_overlay(rect)
+		# Ice and treasure are rendered by persistent textured scene nodes.
 	for effect in model.effects:
-		draw_skill_effect(effect)
-	for ball in sim.balls:
-		if tier > 0 and not manual_fast and volley_time < 9:
-			draw_line(ball.p-ball.v.normalized()*16,ball.p,Color(MINT,0.3),5,true)
-		draw_circle(ball.p,7,WHITE)
+		if effect.kind in ["lightning","lightning_chain","thunder_swarm","time_stop","boss_spawn"]:
+			draw_skill_effect(effect)
 	for i in range(24):
 		draw_line(Vector2(45+i*27,900),Vector2(58+i*27,900),Color("ff698c"),2)
 	text_at("DANGER",Vector2(50,918),11,Color("ff698c"))
@@ -663,7 +724,7 @@ func draw_game():
 		draw_circle(Vector2(model.launch_x,Simulation.RETURN_Y),22,Color(MINT,0.08))
 		draw_circle(Vector2(model.launch_x,Simulation.RETURN_Y),8,WHITE)
 		if aiming:
-			var path = sim.aim_path(direction)
+			var path = sim.laser_path(direction) if armed in ["laser","orbital_strike"] else sim.aim_path(direction)
 			for index in range(path.size()-1):
 				var distance = path[index].distance_to(path[index+1])
 				for point in range(int(distance/17)):
@@ -808,6 +869,29 @@ func draw_settings():
 	button(Rect2(48,656,624,74),"섬광 줄이기  "+("켜짐" if low_flash else "꺼짐"),func(): low_flash=not low_flash; save_settings())
 	panel(Rect2(48,784,624,151),Color("101e30"),Color("263a50"))
 	text_at("테스트 빌드",Vector2(72,826),24,MINT)
-	text_at("8 패시브 · 4 액티브 · 3 융합 · 로컬 저장",Vector2(72,866),22)
+	text_at("12 패시브 · 8 액티브 · VFX STUDIO",Vector2(72,866),22)
 	text_at("계정 · 광고 · 결제 · 온라인 랭킹은 아직 연결하지 않았습니다.",Vector2(72,902),17,MUTED)
 	button(Rect2(160,1040,400,74),"돌아가기",func(): state="pause" if paused_menu else "menu",true)
+
+func draw_studio():
+	var spec=vfx.catalog[studio_index]
+	text_at("VFX STUDIO",Vector2(40,63),31,MINT)
+	text_at("%03d / 114 · %s" % [studio_index+1,spec.category],Vector2(40,103),19,MUTED)
+	text_at(spec.name,Vector2(40,168),36,WHITE)
+	panel(Rect2(38,220,644,720),Color("0b1728"),Color("28425b"))
+	for row in range(3):
+		for col in range(5):
+			panel(Rect2(137+col*92,385+row*75,84,67),Color("123249"),Color("4a8fac"),7)
+	text_at("에셋·타이밍 미리보기 / 전투 피해 판정 없음",Vector2(48,975),18,MUTED)
+	button(Rect2(38,1020,200,70),"이전",func(): studio_index=posmod(studio_index-1,114); vfx.preview_recipe(studio_index))
+	button(Rect2(260,1020,200,70),"다시 재생",func(): vfx.preview_recipe(studio_index),true)
+	button(Rect2(482,1020,200,70),"다음",func(): studio_index=posmod(studio_index+1,114); vfx.preview_recipe(studio_index))
+	button(Rect2(38,1120,310,70),"이 기본 스킬 테스트" if studio_index<20 else "전투 테스트 랩",func():
+		var selected=String(vfx.catalog[studio_index].id)
+		start_run(true)
+		if studio_index<20:
+			model.skills.clear()
+			model.skills["rebound" if selected=="wall" else selected]=5
+			model.assign_bounty()
+	)
+	button(Rect2(372,1120,310,70),"메인으로",func(): vfx.clear(); state="menu")

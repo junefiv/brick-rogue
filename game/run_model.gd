@@ -28,6 +28,9 @@ var event_queue: Array = []
 var event_cursor = 0
 var vfx_budget = 16
 var events_peak = 0
+var delayed_hits: Array = []
+var shot_boost = 0.0
+var echo_ready = false
 
 func reset(is_lab: bool = false):
 	rng.randomize()
@@ -54,8 +57,11 @@ func reset(is_lab: bool = false):
 	event_queue.clear()
 	event_cursor = 0
 	effects.clear()
+	delayed_hits.clear()
+	shot_boost = 0.0
+	echo_ready = false
 	if lab:
-		skills = {"multi":5, "lightning":5, "pierce":5, "blast":5, "critical":5, "rebound":5, "laser":5, "bomb":5, "freeze":3, "stop":3}
+		skills = {"power":5, "frost":5, "pierce":5, "blast":5, "ricochet":5, "rebound":5, "laser":5, "bomb":5, "freeze":3, "missile":3}
 		purchased_balls = 40
 		points = 999999
 		for row in range(9):
@@ -75,6 +81,7 @@ func skill_level(id: String) -> int:
 func count_type(type: String) -> int:
 	var total = 0
 	for id in skills:
+		if id=="multi": continue
 		if config.skills[id].type == type:
 			total += 1
 	return total
@@ -89,19 +96,13 @@ func multiball_cost() -> int:
 	return 100 + 50 * maxi(0, logical_balls() - config.initial_balls)
 
 func can_buy_multiball() -> bool:
-	if lab or logical_balls() >= config.ball_cap or points < multiball_cost():
-		return false
-	var next_tier = mini(5, int((purchased_balls + 1) / 8))
-	return next_tier <= skill_level("multi") or skills.has("multi") or count_type("passive") < config.passive_slots
+	return not lab and logical_balls()<config.ball_cap and points>=multiball_cost()
 
 func buy_multiball() -> bool:
 	if not can_buy_multiball():
 		return false
 	points -= multiball_cost()
 	purchased_balls += 1
-	var tier_level = mini(5, int(purchased_balls / 8))
-	if tier_level > 0:
-		skills["multi"] = tier_level
 	emit_effect(Vector2(launch_x, 918), Color("53f5d0"), 90, "multiball", 0.9)
 	return true
 
@@ -190,7 +191,7 @@ func enqueue(b: Dictionary, amount: float, depth: int = 0, group: String = "prim
 func emit_effect(pos: Vector2, color: Color, radius: float = 30, kind: String = "burst", duration: float = 0.5, extra: Dictionary = {}):
 	if vfx_budget <= 0:
 		return
-	if kind in ["thunder_swarm","freeze_wave","time_stop","laser","orbital_beam","boss_spawn"]:
+	if kind in ["thunder_swarm","freeze_wave","time_stop","boss_spawn"]:
 		for existing in effects:
 			if existing.kind == kind:
 				existing.life = maxf(existing.life, duration)
@@ -222,13 +223,12 @@ func drain_events(budget: int = 256):
 			b.flash = 0.15
 			emit_effect(brick_rect(b).get_center(), Color("6fbbff"), 48, "shield", 0.45)
 			continue
-		var dealt = event.amount
+		var dealt = event.amount * (1.0 + float(b.get("corrosion",0)) * (0.01 + 0.01*skill_level("corrosion")))
+		dealt *= 1.0 + float(b.get("marked",0.0))
 		if b.kind == "armor":
 			dealt = maxf(1, dealt - 1)
 		b.hp -= dealt
 		b.flash = 0.12
-		if skill_level("power") > 0 and event.group == "primary" and (hits + 1) % 8 == 0:
-			emit_effect(brick_rect(b).get_center(), Color("ffbf69"), 34, "power", 0.34)
 		if event.group == "primary":
 			hits += 1
 			proc_primary(b, event)
@@ -237,6 +237,9 @@ func drain_events(budget: int = 256):
 			var reward = 50 if b.kind == "boss" else (3 if b.kind == "normal" else 5)
 			xp += reward
 			points += reward * 100
+			if b.get("bounty",false):
+				points += int(reward*100*0.25*skill_level("bounty"))
+				emit_effect(brick_rect(b).get_center(),Color("ffcf60"),60,"treasure",1.0)
 			emit_effect(brick_rect(b).get_center(), Color("53f5d0"), 58, "shatter", 0.65)
 			if b.kind == "boss":
 				shards += 2
@@ -252,8 +255,9 @@ func drain_events(budget: int = 256):
 func proc_primary(b: Dictionary, event: Dictionary):
 	var center = brick_rect(b).get_center()
 	var blast = skill_level("blast")
-	if blast > 0 and rng.randf() < adjusted_probability(0.08 * blast, event.weight):
-		area_damage(center, 105 + blast * 7, event.amount * 0.6, 1, "blast")
+	if blast > 0:
+		for other in blast_neighbors(b, blast >= 4):
+			schedule_hit(other,event.amount*(0.2+0.1*blast),"bomb_drop",0.30)
 	var chain = skill_level("lightning")
 	if chain > 0 and rng.randf() < adjusted_probability(0.07 * chain, event.weight):
 		var targets: Array = []
@@ -280,7 +284,15 @@ func proc_primary(b: Dictionary, event: Dictionary):
 	var frost = skill_level("frost")
 	if frost > 0 and rng.randf() < adjusted_probability(0.03 * frost, event.weight):
 		b.frozen = 1
-		emit_effect(center, Color("96edff"), 55, "frost", 0.75)
+	# Frost is expressed only by persistent ice geometry on the brick.
+	if skill_level("corrosion")>0:
+		b.corrosion = mini(5,int(b.get("corrosion",0))+1)
+	if skill_level("resonance")>0:
+		b.resonance = int(b.get("resonance",0))+1
+		if b.resonance >= 9-skill_level("resonance"):
+			b.resonance = 0
+			enqueue(b,damage()*event.weight,1,"resonance")
+			emit_effect(center,Color("86dfff"),70,"resonance",0.7)
 
 func area_damage(center: Vector2, radius: float, amount: float, depth: int, group: String):
 	if depth > config.chain_depth:
@@ -296,7 +308,7 @@ func area_damage(center: Vector2, radius: float, amount: float, depth: int, grou
 			enqueue(b, amount, depth, group)
 
 func has_events() -> bool:
-	return event_cursor < event_queue.size()
+	return event_cursor < event_queue.size() or not delayed_hits.is_empty()
 
 func card_pool() -> Array:
 	var pool: Array = []
@@ -304,6 +316,7 @@ func card_pool() -> Array:
 		if id == "multi":
 			continue
 		var spec = config.skills[id]
+		if spec.get("legacy",false): continue
 		if skills.has(id):
 			if skill_level(id) < (3 if spec.get("fusion", false) else 5):
 				pool.append(id)
@@ -325,6 +338,7 @@ func apply_card(id: String) -> bool:
 	if not card_pool().has(id):
 		return false
 	skills[id] = skill_level(id) + 1
+	if id == "bounty": assign_bounty()
 	return true
 
 func consume_level() -> bool:
@@ -335,7 +349,7 @@ func consume_level() -> bool:
 	return true
 
 func available_fusions() -> Array:
-	return config.fusions.filter(func(recipe): return skill_level(recipe.a) == 5 and skill_level(recipe.b) == 5)
+	return config.fusions.filter(func(recipe): return recipe.a!="multi" and recipe.b!="multi" and skill_level(recipe.a) == 5 and skill_level(recipe.b) == 5)
 
 func fuse(recipe: Dictionary) -> bool:
 	if not available_fusions().has(recipe):
@@ -397,6 +411,7 @@ func descend():
 	for id in cooldowns:
 		cooldowns[id] = maxi(0, cooldowns[id] - 1)
 	spawn_row()
+	assign_bounty()
 
 func is_dead() -> bool:
 	return bricks.any(func(b): return b.hp > 0 and b.row + b.h > 9)
@@ -461,3 +476,28 @@ func load_run() -> bool:
 	rng.state = int(data.get("rng_state", "1"))
 	lab = false
 	return true
+
+func assign_bounty():
+	for b in bricks: b.bounty = false
+	if skill_level("bounty") <= 0: return
+	var living = bricks.filter(func(b): return b.hp>0 and b.kind!="boss")
+	if not living.is_empty(): living[rng.randi_range(0,living.size()-1)].bounty = true
+
+func blast_neighbors(source: Dictionary, diagonals: bool) -> Array:
+	var result: Array = []
+	for b in bricks:
+		if b.id==source.id or b.hp<=0: continue
+		var dx = maxi(0,maxi(source.col-b.col-b.w+1,b.col-source.col-source.w+1))
+		var dy = maxi(0,maxi(source.row-b.row-b.h+1,b.row-source.row-source.h+1))
+		if dx<=1 and dy<=1 and (diagonals or dx+dy<=1): result.append(b)
+	return result
+
+func schedule_hit(b: Dictionary, amount: float, effect: String, delay: float = 0.30):
+	delayed_hits.append({"brick":b,"amount":amount,"remaining":delay})
+	emit_effect(brick_rect(b).get_center(),Color("ffbf69"),80,effect,delay+0.6)
+
+func tick_delayed(delta: float):
+	for hit in delayed_hits:
+		hit.remaining -= delta
+		if hit.remaining<=0: enqueue(hit.brick,hit.amount,1,"secondary")
+	delayed_hits = delayed_hits.filter(func(hit): return hit.remaining>0)

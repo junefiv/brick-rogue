@@ -17,6 +17,8 @@ var clock = 0.0
 var first_return = -1.0
 var cap = 96
 var max_live = 0
+var next_ball_id = 0
+var pending_children: Array = []
 
 func setup(run_model):
 	model = run_model
@@ -126,8 +128,10 @@ func trace(origin: Vector2, delta: Vector2, ignored: Array = []) -> Dictionary:
 
 func step(dt: float):
 	clock += dt
+	model.tick_delayed(dt)
 	while emitted < count and clock >= emitted * 0.037:
-		balls.append({"p":launch,"v":shot_direction * model.config.ball_speed,"weight":weight,"bounce":0,"age":0.0,"ignored":[],"dead":false})
+		if balls.size()>=cap: break
+		balls.append(make_ball(launch,shot_direction*model.config.ball_speed*(1.0+model.shot_boost),weight))
 		emitted += 1
 	max_live = maxi(max_live, balls.size())
 	for ball in balls:
@@ -150,6 +154,8 @@ func step(dt: float):
 			ball.p += delta * hit.t
 			remaining *= 1.0 - hit.t
 			if hit.return:
+				if try_ricochet(ball):
+					continue
 				if first_return < 0:
 					first_return = ball.p.x
 				ball.dead = true
@@ -158,14 +164,16 @@ func step(dt: float):
 				break
 			var pierces = false
 			if hit.brick != null:
-				var amount = model.damage() * ball.weight * (1 + minf(2, ball.bounce * 0.05 * model.skill_level("rebound")))
+				var amount = model.damage() * ball.weight * (1 + minf(1.5, ball.bounce * 0.06 * model.skill_level("rebound"))) * (1.0+model.shot_boost)
 				var critical = model.rng.randf() < model.adjusted_probability(0.1 * model.skill_level("critical"), ball.weight)
 				if critical:
 					amount *= 2
 					model.emit_effect(ball.p, Color("ffbf69"), 52, "critical", 0.5)
 				model.enqueue(hit.brick, amount, 0, "primary", ball.weight)
-				var chance = 0.55 if model.skills.has("pierce_bomb") else model.skill_level("pierce") * 0.09
-				pierces = model.rng.randf() < model.adjusted_probability(chance, ball.weight)
+				if model.skill_level("power")>0:
+					model.emit_effect(ball.p,Color("ffbf69"),35,"power",0.24)
+				try_split(ball,-1.0,int(hit.brick.id))
+				pierces = ball.get("piercing",false)
 				if pierces:
 					model.emit_effect(ball.p, Color("6fbbff"), 60, "pierce", 0.45, {"direction":ball.v.normalized()})
 					ball.ignored.append(hit.brick.id)
@@ -174,13 +182,22 @@ func step(dt: float):
 			else:
 				ball.bounce += 1
 				if model.skill_level("rebound") > 0:
-					model.emit_effect(ball.p, Color("53f5d0"), 42, "rebound", 0.45, {"normal":hit.normal})
+					model.emit_effect(ball.p, Color("ff7938"), 24, "wall", 0.24, {"normal":hit.normal})
 			if not pierces:
 				ball.v = ball.v.bounce(hit.normal)
 				ball.p += hit.normal * 0.02
 			else:
 				ball.p += ball.v.normalized() * 0.02
 	balls = balls.filter(func(ball): return not ball.dead)
+	for child in pending_children:
+		if balls.size()<cap: balls.append(child)
+		else:
+			# Preserve added damage weight without an unbounded physics population.
+			var nearest = balls[0]
+			for other in balls:
+				if other.p.distance_squared_to(child.p)<nearest.p.distance_squared_to(child.p): nearest=other
+			nearest.weight += child.weight
+	pending_children.clear()
 	model.drain_events(model.config.event_budget)
 
 func aim_path(direction: Vector2) -> Array:
@@ -196,4 +213,53 @@ func aim_path(direction: Vector2) -> Array:
 			break
 		dir = dir.bounce(hit.normal)
 		origin = point + hit.normal * 0.05
+	return result
+
+func make_ball(at: Vector2, velocity: Vector2, logical_weight: float, child: bool = false) -> Dictionary:
+	next_ball_id += 1
+	var chance = 0.55 if model.skills.has("pierce_bomb") else model.skill_level("pierce")*0.09
+	return {"id":next_ball_id,"p":at,"v":velocity,"weight":logical_weight,"bounce":0,"age":0.0,"ignored":[],"dead":false,"split":child,"ricochets":0,"piercing":model.rng.randf()<chance}
+
+func try_ricochet(ball: Dictionary, roll: float = -1.0) -> bool:
+	var level = model.skill_level("ricochet")
+	if level<=0: return false
+	var chance = (0.01+0.03*level)*pow(0.5,int(ball.get("ricochets",0)))
+	if roll<0: roll=model.rng.randf()
+	if roll>=chance: return false
+	ball.ricochets = int(ball.get("ricochets",0))+1
+	ball.v = Vector2(ball.v.x,-absf(ball.v.y))
+	ball.p.y = RETURN_Y-0.05
+	ball.age = 0.0
+	model.emit_effect(ball.p-Vector2(0,18),Color("8ef8dd"),60,"ricochet",0.7)
+	return true
+
+func try_split(ball: Dictionary, roll: float = -1.0, struck_id: int = -1):
+	var level = model.skill_level("split")
+	if level<=0: return
+	var chance = 0.0025+0.0025*level
+	if roll<0: roll=model.rng.randf()
+	if roll>=chance: return
+	var angle = deg_to_rad(model.rng.randf_range(12,18)) * (-1 if model.rng.randf()<0.5 else 1)
+	var child = make_ball(ball.p,ball.v.rotated(angle),ball.weight*0.6,true)
+	child.ignored = ball.ignored.duplicate()
+	if struck_id>=0: child.ignored.append(struck_id)
+	pending_children.append(child)
+	model.emit_effect(ball.p,Color("42e6cf"),30,"split",0.35)
+
+func laser_path(direction: Vector2) -> Array:
+	var angle = clampf(atan2(direction.x,-direction.y),deg_to_rad(-50),deg_to_rad(50))
+	var velocity = Vector2(sin(angle),-cos(angle))
+	var origin = Vector2(model.launch_x,RETURN_Y)
+	var result: Array = [origin]
+	for reflection in range(3):
+		var top_distance = (TOP-origin.y)/velocity.y
+		var side_distance = INF
+		if absf(velocity.x)>0.00001:
+			side_distance = ((RIGHT if velocity.x>0 else LEFT)-origin.x)/velocity.x
+		if top_distance<=side_distance:
+			result.append(origin+velocity*top_distance)
+			break
+		origin += velocity*side_distance
+		result.append(origin)
+		velocity.x = -velocity.x
 	return result
