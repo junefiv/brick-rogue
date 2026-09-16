@@ -102,7 +102,7 @@ func buy_multiball() -> bool:
 	var tier_level = mini(5, int(purchased_balls / 8))
 	if tier_level > 0:
 		skills["multi"] = tier_level
-	emit_effect(Vector2(launch_x, 952), Color("53f5d0"), 90, "multiball", 0.9)
+	emit_effect(Vector2(launch_x, 918), Color("53f5d0"), 90, "multiball", 0.9)
 	return true
 
 func damage() -> float:
@@ -113,7 +113,7 @@ func add_brick(col: int, row: int, hp: int, kind: String, width: int = 1, height
 	bricks.append({"id":serial,"col":col,"row":row,"w":width,"h":height,"hp":hp,"max_hp":hp,"kind":kind,"frozen":0,"shield":2 if kind == "shield" else 0,"flash":0.0})
 
 func brick_rect(b: Dictionary) -> Rect2:
-	return Rect2(42 + b.col * 92, 264 + b.row * 70, b.w * 92 - 8, b.h * 70 - 8)
+	return Rect2(42 + b.col * 92, 154 + b.row * 75, b.w * 92 - 8, b.h * 75 - 8)
 
 func overlaps_cells(b: Dictionary, col: int, row: int, width: int, height: int) -> bool:
 	return b.hp > 0 and b.col < col + width and b.col + b.w > col and b.row < row + height and b.row + b.h > row

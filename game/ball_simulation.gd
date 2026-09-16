@@ -2,8 +2,8 @@ extends RefCounted
 
 const LEFT = 45.0
 const RIGHT = 675.0
-const TOP = 267.0
-const RETURN_Y = 962.0
+const TOP = 157.0
+const RETURN_Y = 928.0
 const RADIUS = 7.0
 var model
 var balls: Array = []
@@ -93,7 +93,7 @@ func candidates(origin: Vector2, delta: Vector2) -> Array:
 	var max_point = origin.max(origin + delta) + Vector2.ONE * RADIUS
 	var result: Array = []
 	for x in range(maxi(0, floori((min_point.x - 38) / 92)), mini(6, floori((max_point.x - 38) / 92)) + 1):
-		for y in range(maxi(0, floori((min_point.y - 260) / 70)), mini(10, floori((max_point.y - 260) / 70)) + 1):
+		for y in range(maxi(0, floori((min_point.y - 150) / 75)), mini(10, floori((max_point.y - 150) / 75)) + 1):
 			var b = grid.get(Vector2i(x,y))
 			if b != null and b.hp > 0 and not result.has(b):
 				result.append(b)

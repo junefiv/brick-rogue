@@ -38,10 +38,12 @@ func run():
 	await screenshot("01-menu")
 	await tap(Vector2(300,800))
 	check(game.state=="aim","Menu button enters gameplay")
-	game.model.points=100
+	var balls_before_purchase=game.model.logical_balls()
+	var purchase_cost=game.model.multiball_cost()
+	game.model.points=purchase_cost
 	await process_frame
-	await tap(Vector2(330,1015))
-	check(game.model.logical_balls()==9 and game.model.points==0,"POINT button buys exactly one ball")
+	await tap(Vector2(570,985))
+	check(game.model.logical_balls()==balls_before_purchase+1 and game.model.points==0,"POINT button buys exactly one ball")
 	await screenshot("02-gameplay")
 	var event=InputEventMouseButton.new()
 	event.button_index=MOUSE_BUTTON_LEFT
@@ -49,6 +51,10 @@ func run():
 	event.position=game.to_global(Vector2(420,700))
 	game._input(event)
 	check(game.aiming,"Pointer press starts aim")
+	var motion=InputEventMouseMotion.new()
+	motion.position=game.to_global(Vector2(360,820))
+	game._input(motion)
+	check(game.aim_drag_valid,"Aim drag becomes valid after stable slingshot motion")
 	await screenshot("03-aim")
 	event.pressed=false
 	game._input(event)
@@ -62,6 +68,9 @@ func run():
 	game.start_run(true)
 	await process_frame
 	await process_frame
+	await tap(Vector2(80,1065))
+	check(game.inspected_skill!="","Owned skill tile opens a readable effect description")
+	await screenshot("09-skill-info")
 	await tap(Vector2(360,1225))
 	check(game.state=="fusion","Fusion ready button opens choice")
 	await screenshot("04-fusion")

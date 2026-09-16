@@ -17,6 +17,9 @@ var buttons: Array = []
 var direction = Vector2(0.3,-1).normalized()
 var aiming = false
 var drag_start = Vector2.ZERO
+var aim_drag_valid = false
+var inspected_skill = ""
+var inspected_skill_life = 0.0
 var armed = ""
 var cards: Array = []
 var volley_time = 0.0
@@ -140,11 +143,13 @@ func _process(delta):
 		if window_size.x > 0 and window_size.y > 0 and safe.size.x > 0 and safe.size.y > 0:
 			var ratio = viewport_size / window_size
 			usable = Rect2(safe.position * ratio, safe.size * ratio).intersection(usable)
-	var factor = minf(usable.size.x / 720.0, usable.size.y / 1280.0)
-	scale = Vector2.ONE * factor
-	position = usable.position + (usable.size - Vector2(720,1280) * factor) / 2
+	# Fill the whole safe display area. The previous uniform fit centered a
+	# 16:9 canvas and produced large unused bands on tall Android screens.
+	scale = Vector2(usable.size.x / 720.0, usable.size.y / 1280.0)
+	position = usable.position
 	animation_time += delta
 	toast_life = maxf(0, toast_life - delta)
+	inspected_skill_life = maxf(0, inspected_skill_life - delta)
 	model.vfx_budget = 0 if low_flash else model.config.vfx_caps[tier]
 	if state not in ["pause","settings"]:
 		for effect in model.effects:
@@ -201,14 +206,16 @@ func _input(event):
 				if button.rect.has_point(point):
 					button.action.call()
 					return
-			if state == "aim" and Rect2(38,260,644,750).has_point(point):
+			if state == "aim" and Rect2(38,150,644,780).has_point(point):
 				drag_start = point
 				aiming = true
-				update_direction(point)
+				aim_drag_valid = false
 		elif aiming:
 			aiming = false
 			if state == "aim":
-				if armed != "":
+				if not aim_drag_valid:
+					notify("아래로 드래그해 방향을 정한 뒤 손을 놓으세요.")
+				elif armed != "":
 					use_targeted_active()
 				else:
 					fire()
@@ -216,13 +223,27 @@ func _input(event):
 		update_direction(to_local(event.position))
 
 func update_direction(point: Vector2):
-	var aim = point - Vector2(model.launch_x, Simulation.RETURN_Y)
-	if point.distance_to(drag_start) > 24 and point.y > drag_start.y:
-		aim = drag_start - point
-	if aim.length_squared() < 9:
+	# A single slingshot gesture avoids the old direct/slingshot mode switch,
+	# which made the guide flip when the pointer crossed the drag origin.
+	var aim = drag_start - point
+	if aim.length() < 18:
 		return
-	aim.y = -maxf(absf(aim.y), absf(aim.x) * tan(deg_to_rad(10)))
+	aim_drag_valid = true
+	aim.y = -maxf(absf(aim.y), absf(aim.x) * tan(deg_to_rad(12)))
 	direction = aim.normalized()
+
+func show_skill_info(id: String, seconds: float = 5.0):
+	if not model.config.skills.has(id):
+		return
+	inspected_skill = id
+	inspected_skill_life = seconds
+
+func choose_upgrade(id: String):
+	if model.apply_card(id):
+		show_skill_info(id, 7.0)
+		var spec = model.config.skills[id]
+		notify("%s Lv.%d 장착 · %s" % [spec.name, model.skill_level(id), spec.description])
+	resolve_levels()
 
 func fire():
 	if state != "aim":
@@ -286,8 +307,9 @@ func delete_save():
 func active(id: String):
 	if state != "aim":
 		return
+	show_skill_info(id)
 	if int(model.cooldowns.get(id, 0)) > 0:
-		notify("%d라운드 후 사용할 수 있습니다." % model.cooldowns[id])
+		notify("%s 쿨다운 · %d라운드 후 다시 사용" % [model.config.skills[id].name, model.cooldowns[id]])
 		return
 	if id in ["laser", "bomb", "orbital_strike"]:
 		armed = "" if armed == id else id
@@ -418,7 +440,7 @@ func draw_skill_effect(effect: Dictionary):
 				if i>0:
 					draw_circle(chain_points[i],8+10*t,Color(color,alpha*0.18))
 		"thunder_swarm":
-			draw_rect(Rect2(38,260,644,730),Color("8e73ff",alpha*0.08))
+			draw_rect(Rect2(38,150,644,780),Color("8e73ff",alpha*0.08))
 			var targets: Array = effect.get("targets",[])
 			for i in range(mini(18,targets.size())):
 				draw_bolt(Vector2(targets[i].x,260),targets[i],color,alpha,3,seed_value+i*13)
@@ -428,12 +450,12 @@ func draw_skill_effect(effect: Dictionary):
 				draw_line(p-dir*radius*0.35,p+dir*radius*(0.45+t*0.35),Color(color,alpha),2,true)
 				draw_line(p+dir*radius*0.35,p+dir*radius*0.2+dir.orthogonal()*8,Color(WHITE,alpha),1,true)
 		"freeze_wave":
-			var wave_y=lerpf(900,300,t)
+			var wave_y=lerpf(875,185,t)
 			draw_rect(Rect2(38,wave_y-70,644,140),Color(color,alpha*0.12))
 			for x in range(48,680,28):
 				draw_colored_polygon(PackedVector2Array([Vector2(x,wave_y+12),Vector2(x+14,wave_y-20),Vector2(x+28,wave_y+12)]),Color(color,alpha*0.65))
 		"time_stop":
-			draw_rect(Rect2(38,260,644,730),Color(color,alpha*0.07))
+			draw_rect(Rect2(38,150,644,780),Color(color,alpha*0.07))
 			draw_arc(p,radius*(0.45+0.25*t),0,TAU,64,Color(color,alpha),5,true)
 			draw_line(p,p+Vector2.UP.rotated(-1.1*t)*radius*0.28,Color(WHITE,alpha),4,true)
 			draw_line(p,p+Vector2.RIGHT.rotated(-2.6*t)*radius*0.18,Color(color,alpha),3,true)
@@ -476,9 +498,9 @@ func draw_skill_effect(effect: Dictionary):
 			poly.append(poly[0])
 			draw_polyline(poly,Color(color,alpha),4,true)
 		"boss_spawn":
-			draw_rect(Rect2(38,260,644,130),Color(color,alpha*0.09))
+			draw_rect(Rect2(38,150,644,140),Color(color,alpha*0.09))
 			draw_arc(p,radius*(1-t*0.5),0,TAU,48,Color(color,alpha),6,true)
-			centered("BOSS SIGNAL",318,21,Color(color,alpha))
+			centered("BOSS SIGNAL",208,21,Color(color,alpha))
 		"shatter", _:
 			for i in range(9):
 				var dir=Vector2.RIGHT.rotated(i*TAU/9.0+seed_value*0.01)
@@ -490,6 +512,49 @@ func button(rect: Rect2, label: String, action: Callable, primary: bool = false,
 	var width = font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
 	text_at(label, Vector2(rect.position.x+(rect.size.x-width)/2,rect.position.y+rect.size.y/2+8),size,INK if primary else WHITE)
 	buttons.append({"rect":rect,"action":action})
+
+func draw_purchase_card():
+	var rect = Rect2(38, 944, 644, 88)
+	var affordable = model.can_buy_multiball()
+	panel(rect, Color("0d2130"), Color(MINT, 0.75 if affordable else 0.25), 14)
+	text_at("보유 공", rect.position + Vector2(18, 26), 14, MUTED)
+	text_at("%d개" % model.logical_balls(), rect.position + Vector2(18, 62), 27, WHITE)
+	text_at("POINT로 공을 1개 구매" , rect.position + Vector2(126, 28), 17, MINT)
+	text_at("보유 %d POINT" % model.points, rect.position + Vector2(126, 59), 15, MUTED)
+	var buy_rect = Rect2(rect.position + Vector2(392, 10), Vector2(238, 68))
+	panel(buy_rect, MINT if affordable else Color("172739"), MINT if affordable else Color("34485c"), 11)
+	text_at("공 +1 구매", buy_rect.position + Vector2(23, 29), 20, INK if affordable else MUTED)
+	text_at("%d POINT" % model.multiball_cost(), buy_rect.position + Vector2(58, 55), 15, INK if affordable else MUTED)
+	buttons.append({"rect": buy_rect, "action": func(): purchase_ball()})
+
+func draw_active_tile(id: String, rect: Rect2):
+	var spec = model.config.skills[id]
+	var color = Color(spec.color)
+	var cd = int(model.cooldowns.get(id, 0))
+	var selected = armed == id
+	panel(rect, color if selected else Color(color, 0.085), color, 10)
+	text_at(spec.name, rect.position + Vector2(10, 24), 16, INK if selected else WHITE)
+	var status = "사용 가능" if cd == 0 else "쿨다운 %d라운드" % cd
+	text_at(status, rect.position + Vector2(10, 48), 13, INK if selected else (color if cd == 0 else MUTED))
+	buttons.append({"rect": rect, "action": func(): active(id)})
+
+func draw_skill_info_panel():
+	if inspected_skill_life <= 0 or inspected_skill == "" or not model.config.skills.has(inspected_skill):
+		return
+	var spec = model.config.skills[inspected_skill]
+	var color = Color(spec.color)
+	var rect = Rect2(48, 778, 624, 102)
+	panel(rect, Color("101e31", 0.97), Color(color, 0.8), 13)
+	var type_label = "패시브 · 항상 적용" if spec.type == "passive" else "액티브 · 눌러서 사용"
+	text_at("%s  Lv.%d" % [spec.name, model.skill_level(inspected_skill)], rect.position + Vector2(18, 29), 20, color)
+	text_at(type_label, rect.position + Vector2(397, 27), 14, MUTED)
+	text_at(spec.description, rect.position + Vector2(18, 60), 17, WHITE)
+	if spec.type == "active":
+		var cd = int(model.cooldowns.get(inspected_skill, 0))
+		var cd_text = "지금 사용 가능" if cd == 0 else "남은 쿨다운: %d라운드" % cd
+		text_at(cd_text, rect.position + Vector2(18, 86), 14, color if cd == 0 else MUTED)
+	else:
+		text_at("아래 스킬 칸을 누르면 설명을 다시 볼 수 있습니다.", rect.position + Vector2(18, 86), 14, MUTED)
 
 func _draw():
 	buttons.clear()
@@ -507,8 +572,8 @@ func _draw():
 			buttons.clear()
 			draw_overlay()
 	if toast_life > 0:
-		panel(Rect2(30,1214,660,46),Color("192c3e"),Color("35536a"),10)
-		centered(toast,1244,18,WHITE)
+		panel(Rect2(48,872,624,46),Color("192c3e",0.97),Color("35536a"),10)
+		centered(toast,902,17,WHITE)
 
 func draw_menu():
 	text_at("CORE DEFENSE SYSTEM",Vector2(42,64),18,MINT)
@@ -545,25 +610,22 @@ func draw_menu():
 	centered("OFFLINE READY    /    ANDROID    /    GODOT",1210,15,MUTED)
 
 func draw_game():
-	text_at("ROGUE / BREAKER",Vector2(38,65),22,WHITE)
-	button(Rect2(582,30,100,53),"Ⅱ",func(): previous_state=state; state="pause")
+	text_at("ROGUE / BREAKER",Vector2(38,35),19,WHITE)
+	button(Rect2(602,12,80,44),"Ⅱ",func(): previous_state=state; state="pause")
 	var sectors = ["NEON GATEWAY","FROZEN RELAY","TOXIC REACTOR","SINGULARITY"]
-	text_at("SECTOR %02d  /  %s" % [mini(4,int((model.round_no-1)/10)+1),sectors[mini(3,int((model.round_no-1)/10))]],Vector2(39,109),16,MINT)
-	text_at("ROUND",Vector2(40,153),15,MUTED)
-	text_at("%02d" % model.round_no,Vector2(38,202),46)
-	text_at("LEVEL",Vector2(264,153),15,MUTED)
-	text_at("%02d" % model.level,Vector2(262,202),46)
-	text_at("POINT",Vector2(494,153),15,MUTED)
-	text_at("%06d" % model.points,Vector2(492,199),32)
-	panel(Rect2(38,221,644,7),Color("1a2c43"),Color("1a2c43"),3)
-	draw_rect(Rect2(38,221,644*clampf(float(model.xp)/model.required_xp(),0,1),7),MINT)
-	text_at("XP  %d / %d" % [model.xp,model.required_xp()],Vector2(39,249),13,MUTED)
-	text_at("LAB · 300 LOGICAL" if model.lab else "8 ORBS → YOUR BUILD",Vector2(492,249),13,PURPLE if model.lab else MUTED)
-	panel(Rect2(38,260,644,730),Color("0b1728"),Color("253d54"),8)
+	text_at("SECTOR %02d · %s" % [mini(4,int((model.round_no-1)/10)+1),sectors[mini(3,int((model.round_no-1)/10))]],Vector2(39,61),13,MINT)
+	text_at("ROUND %02d" % model.round_no,Vector2(39,99),22,WHITE)
+	text_at("LEVEL %02d" % model.level,Vector2(237,99),22,WHITE)
+	text_at("POINT %06d" % model.points,Vector2(445,99),22,MINT)
+	panel(Rect2(38,116,644,7),Color("1a2c43"),Color("1a2c43"),3)
+	draw_rect(Rect2(38,116,644*clampf(float(model.xp)/model.required_xp(),0,1),7),MINT)
+	text_at("XP %d/%d" % [model.xp,model.required_xp()],Vector2(39,141),12,MUTED)
+	text_at("LAB · 300 ORBS" if model.lab else "%d ORBS" % model.logical_balls(),Vector2(565,141),12,PURPLE if model.lab else MUTED)
+	panel(Rect2(38,150,644,780),Color("0b1728"),Color("253d54"),8)
 	for row in range(10):
-		draw_line(Vector2(39,260+row*70),Vector2(681,260+row*70),Color(0.2,0.5,0.7,0.075))
+		draw_line(Vector2(39,150+row*75),Vector2(681,150+row*75),Color(0.2,0.5,0.7,0.075))
 	for col in range(8):
-		draw_line(Vector2(38+col*92,260),Vector2(38+col*92,890),Color(0.2,0.5,0.7,0.075))
+		draw_line(Vector2(38+col*92,150),Vector2(38+col*92,900),Color(0.2,0.5,0.7,0.075))
 	for b in model.bricks:
 		if b.hp <= 0:
 			continue
@@ -595,8 +657,8 @@ func draw_game():
 			draw_line(ball.p-ball.v.normalized()*16,ball.p,Color(MINT,0.3),5,true)
 		draw_circle(ball.p,7,WHITE)
 	for i in range(24):
-		draw_line(Vector2(45+i*27,899),Vector2(58+i*27,899),Color("ff698c"),2)
-	text_at("DANGER LINE",Vector2(50,923),12,Color("ff698c"))
+		draw_line(Vector2(45+i*27,900),Vector2(58+i*27,900),Color("ff698c"),2)
+	text_at("DANGER",Vector2(50,918),11,Color("ff698c"))
 	if state == "aim":
 		draw_circle(Vector2(model.launch_x,Simulation.RETURN_Y),22,Color(MINT,0.08))
 		draw_circle(Vector2(model.launch_x,Simulation.RETURN_Y),8,WHITE)
@@ -608,39 +670,41 @@ func draw_game():
 					draw_circle(path[index].lerp(path[index+1],point*17/distance),2.5,MINT if armed == "" else Color("ff7d9b"))
 				draw_circle(path[index+1],6,Color(MINT,0.6),false,1.5,true)
 		else:
-			centered("드래그하여 조준 · 손을 놓아 발사" if armed == "" else "스킬 조준 중 · 손을 놓아 사용",941,18,MUTED)
-	text_at("●  %d ORBS" % model.logical_balls(),Vector2(39,1025),19,MINT)
+			centered("아래로 드래그해 조준 · 손을 놓아 발사" if armed == "" else "스킬 방향 조준 · 손을 놓아 사용",922,16,MUTED)
 	if state == "aim" and not model.lab:
-		button(Rect2(188,994,300,43),"공 +1 · %d POINT"%model.multiball_cost(),func(): purchase_ball(),model.can_buy_multiball())
-	text_at("%d FPS" % Engine.get_frames_per_second() if animation_time > 3 else "WARMUP",Vector2(594,1025),13,MUTED)
+		draw_purchase_card()
+	else:
+		panel(Rect2(38,944,644,88),Color("0d192a"),Color("26394e"),12)
+		text_at("●  %d ORBS" % model.logical_balls(),Vector2(60,996),23,MINT)
+		text_at("%d FPS" % Engine.get_frames_per_second() if animation_time > 3 else "WARMUP",Vector2(580,995),13,MUTED)
 	var passive_index = 0
 	for id in model.skills:
 		if model.config.skills[id].type != "passive": continue
-		var rect = Rect2(38+passive_index*109,1044,99,56)
+		var rect = Rect2(38+passive_index*109,1043,99,56)
 		var color = Color(model.config.skills[id].color)
 		panel(rect,Color(color,0.075),Color(color,0.4),8)
 		text_at(model.config.skills[id].short,rect.position+Vector2(8,22),13,color)
 		text_at("Lv.%d"%model.skills[id],rect.position+Vector2(8,43),13,WHITE)
+		buttons.append({"rect":rect,"action":func(): show_skill_info(id)})
 		passive_index+=1
 	for i in range(passive_index,6):
-		panel(Rect2(38+i*109,1044,99,56),Color("0a1424"),Color("1c2a3d"),8)
-		text_at("+",Vector2(78+i*109,1080),20,Color("304259"))
+		panel(Rect2(38+i*109,1043,99,56),Color("0a1424"),Color("1c2a3d"),8)
+		text_at("+",Vector2(78+i*109,1079),20,Color("304259"))
 	var active_index = 0
 	for id in model.skills:
 		if model.config.skills[id].type != "active": continue
-		var cd = int(model.cooldowns.get(id,0))
-		var label = model.config.skills[id].short + (" · %d"%cd if cd>0 else " ✓")
-		button(Rect2(38+active_index*164,1120,152,65),label,func(): active(id),armed==id,Color(model.config.skills[id].color))
+		draw_active_tile(id,Rect2(38+active_index*164,1110,152,62))
 		active_index+=1
 	for i in range(active_index,4):
-		panel(Rect2(38+i*164,1120,152,65),Color("0a1424"),Color("1c2a3d"),10)
-		text_at("EMPTY",Vector2(76+i*164,1160),15,Color("42546c"))
+		panel(Rect2(38+i*164,1110,152,62),Color("0a1424"),Color("1c2a3d"),10)
+		text_at("ACTIVE EMPTY",Vector2(54+i*164,1148),13,Color("42546c"))
 	if state == "flight":
-		button(Rect2(212,1204,296,46),"가속 ×4" if not manual_fast else "×4 진행 중",func(): manual_fast=true)
+		button(Rect2(212,1190,296,52),"가속 ×4" if not manual_fast else "×4 진행 중",func(): manual_fast=true)
 	elif state == "aim" and not model.available_fusions().is_empty():
-		button(Rect2(212,1204,296,46),"FUSION READY",func(): fusion_from_aim=true; state="fusion",true,PURPLE)
+		button(Rect2(212,1190,296,52),"FUSION READY",func(): fusion_from_aim=true; state="fusion",true,PURPLE)
 	else:
-		centered("PASSIVE %d/6   ·   ACTIVE %d/4   ·   오프라인"%[model.count_type("passive"),model.count_type("active")],1229,15,MUTED)
+		centered("스킬 칸을 누르면 효과 설명을 볼 수 있습니다.",1219,14,MUTED)
+	draw_skill_info_panel()
 
 func draw_overlay():
 	if state == "upgrade":
@@ -658,7 +722,7 @@ func draw_overlay():
 			text_at("Lv.%d → %d"%[model.skill_level(id),model.skill_level(id)+1],rect.position+Vector2(448,77),23,color)
 			text_at(spec.description,rect.position+Vector2(24,119),20,MUTED)
 			text_at("선택하여 장착  →",rect.position+Vector2(430,147),16,color)
-			buttons.append({"rect":rect,"action":func(): model.apply_card(id); resolve_levels()})
+			buttons.append({"rect":rect,"action":func(): choose_upgrade(id)})
 		if model.rerolls > 0:
 			button(Rect2(180,995,360,65),"다시 뽑기 · %d"%model.rerolls,func(): model.rerolls-=1; cards=model.draw_cards())
 	elif state == "fusion":
@@ -672,7 +736,8 @@ func draw_overlay():
 			panel(rect,Color("211b39"),Color("746199"))
 			text_at(model.config.skills[recipe.a].name+" + "+model.config.skills[recipe.b].name,rect.position+Vector2(24,39),20,MUTED)
 			text_at(model.config.skills[recipe.result].name+"  →",rect.position+Vector2(24,86),33,PURPLE)
-			text_at("2 SLOTS → 1 SLOT    /    융합 Lv.1",rect.position+Vector2(24,128),17,WHITE)
+			text_at(model.config.skills[recipe.result].description,rect.position+Vector2(24,119),17,WHITE)
+			text_at("2개 슬롯 → 1개 슬롯 · 융합 Lv.1",rect.position+Vector2(24,146),15,MUTED)
 			buttons.append({"rect":rect,"action":func(): apply_fusion(recipe)})
 		button(Rect2(180,1014,360,65),"지금은 유지",func(): state="aim" if fusion_from_aim else "resolve"; finish_fusion())
 	elif state == "forge":
@@ -726,7 +791,8 @@ func apply_fusion(recipe: Dictionary):
 	elif result == "orbital_strike":
 		extra = {"from":Vector2(model.launch_x,Simulation.RETURN_Y),"to":Vector2(360,280)}
 	model.emit_effect(Vector2(360,610),Color(model.config.skills[result].color),260,kind,1.1,extra)
-	notify("융합 완료! 슬롯 하나가 비었습니다.")
+	show_skill_info(result, 7.0)
+	notify("융합 완료 · %s · %s" % [model.config.skills[result].name, model.config.skills[result].description])
 	state="aim" if fusion_from_aim else "resolve"
 	finish_fusion()
 
