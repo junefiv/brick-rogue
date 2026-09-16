@@ -1,0 +1,10 @@
+{
+  "engine_fps": 31.0,
+  "hits": 881,
+  "max_physics_callback_ms": 1.635,
+  "note": "Windows AMD OpenGL. Final run without the concurrent synthetic stress process. Not an Android benchmark.",
+  "round": 2,
+  "sample_fps": 28.6720326257371,
+  "seconds": 20.0209526666667,
+  "worst_frame_ms": 45.386
+}

@@ -1,0 +1,29 @@
+{
+  "initial_balls": 8, "ball_cap": 300, "physical_caps": [64, 96, 128],
+  "ball_speed": 850, "ball_radius": 7, "passive_slots": 6, "active_slots": 4,
+  "max_level": 30, "chain_depth": 4, "event_budget": 256, "vfx_caps": [10, 16, 24],
+  "xp_base": 10, "xp_linear": 4, "xp_power": 0.7,
+  "hp_base": 3, "hp_linear": 1.2, "hp_power": 0.18, "hp_exponent": 1.55,
+  "skills": {
+    "multi": {"name":"멀티 볼", "short":"MULTI", "type":"passive", "description":"레벨마다 공 +8개", "color":"53f5d0"},
+    "power": {"name":"파워 코어", "short":"POWER", "type":"passive", "description":"레벨마다 기본 피해 +1", "color":"ffbf69"},
+    "pierce": {"name":"관통", "short":"PIERCE", "type":"passive", "description":"레벨마다 관통 확률 +9%", "color":"6fbbff"},
+    "blast": {"name":"폭발", "short":"BLAST", "type":"passive", "description":"충돌 시 주변 벽돌에 범위 피해", "color":"ff7d9b"},
+    "lightning": {"name":"연쇄 번개", "short":"CHAIN", "type":"passive", "description":"확률적으로 가까운 벽돌에 번개", "color":"c5a1ff"},
+    "frost": {"name":"서리", "short":"FROST", "type":"passive", "description":"확률적으로 벽돌을 동결해 하강 지연", "color":"96edff"},
+    "critical": {"name":"크리티컬", "short":"CRIT", "type":"passive", "description":"레벨마다 치명타 확률 +10%", "color":"ffbf69"},
+    "rebound": {"name":"월 차지", "short":"WALL", "type":"passive", "description":"벽 반사마다 피해 누적 증가", "color":"53f5d0"},
+    "laser": {"name":"레이저", "short":"LASER", "type":"active", "cooldown":5, "description":"선택 후 조준하면 경로 전체를 공격", "color":"ff7d9b"},
+    "bomb": {"name":"폭격", "short":"BOMB", "type":"active", "cooldown":5, "description":"선택 후 조준한 첫 벽돌 주변을 폭격", "color":"ffbf69"},
+    "freeze": {"name":"빙결 파동", "short":"FREEZE", "type":"active", "cooldown":6, "description":"모든 벽돌의 다음 하강을 한 번 방지", "color":"96edff"},
+    "stop": {"name":"타임 스톱", "short":"STOP", "type":"active", "cooldown":8, "description":"이번 라운드 전체 하강을 방지", "color":"c5a1ff"},
+    "pierce_bomb": {"name":"관통 폭탄", "short":"P.BOMB", "type":"passive", "fusion":true, "description":"관통 55% + 관통할 때마다 대폭발", "color":"ff7d9b"},
+    "thunder_swarm": {"name":"뇌우 군단", "short":"SWARM", "type":"passive", "fusion":true, "description":"공 +40개, 12회 충돌마다 광역 낙뢰", "color":"c5a1ff"},
+    "orbital_strike": {"name":"궤도 폭격", "short":"ORBIT", "type":"active", "fusion":true, "cooldown":6, "description":"레이저 경로에 연속 범위 폭격", "color":"ffbf69"}
+  },
+  "fusions": [
+    {"a":"blast", "b":"pierce", "result":"pierce_bomb"},
+    {"a":"multi", "b":"lightning", "result":"thunder_swarm"},
+    {"a":"laser", "b":"bomb", "result":"orbital_strike"}
+  ]
+}

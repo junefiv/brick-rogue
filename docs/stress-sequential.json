@@ -1,0 +1,19 @@
+{
+  "bricks": 63,
+  "event_queue_peak": 196,
+  "fixed_hz": 120,
+  "hits": 139676,
+  "logical_balls": 300,
+  "memory_peak_sampled_bytes": 28835988,
+  "memory_start_bytes": 25468252,
+  "note": "Desktop headless simulation only. No Android rendering, thermal or GPU performance claim. Timing array contributes approximately 1.7 MB to memory growth.",
+  "peak_live_balls": 61,
+  "physical_cap": 96,
+  "simulated_seconds": 900,
+  "step_max_ms": 22.479,
+  "step_mean_ms": 0.926228388888885,
+  "step_p95_ms": 3.685,
+  "step_p99_ms": 5.597,
+  "volleys": 54,
+  "wall_seconds": 100.315307
+}
