@@ -48,11 +48,11 @@ func run():
 	for i in range(40):
 		check(m.buy_multiball(),"Single-ball purchase %d succeeds"%(i+1))
 	check(m.skill_level("multi")==0 and m.logical_balls()==48 and m.count_type("passive")==0,"Forty purchased balls use no passive slot and grant no fusion ingredient")
-	m.skills={"ricochet":5,"lightning":5,"pierce":5,"blast":5,"power":5,"frost":5,"laser":5,"bomb":5,"freeze":5,"missile":5}
-	check(m.count_type("passive")==6 and m.count_type("active")==4,"Skill slot caps")
-	check(not m.apply_card("critical"),"New passive rejected when six slots are full")
+	m.skills={"ricochet":5,"pierce":5,"blast":5,"power":5,"laser":5,"bomb":5,"freeze":5}
+	check(m.count_type("passive")==4 and m.count_type("active")==3,"Skill slot caps")
+	check(not m.apply_card("critical"),"New passive rejected when four slots are full")
 	var recipe=m.config.fusions[0]
-	check(m.fuse(recipe) and m.count_type("passive")==5 and m.skill_level("pierce_bomb")==1 and not m.skills.has("blast") and not m.skills.has("pierce"),"Fusion consumes two Lv5 skills and creates one Lv1 skill")
+	check(m.fuse(recipe) and m.count_type("passive")==3 and m.skill_level("pierce_bomb")==1 and not m.skills.has("blast") and not m.skills.has("pierce"),"Fusion consumes two Lv5 skills and creates one Lv1 skill")
 	check(not m.dismantle("pierce_bomb"),"Dismantle forbidden outside forge")
 	m.boss_killed=true
 	m.skills.critical=1

@@ -61,7 +61,9 @@ func reset(is_lab: bool = false):
 	shot_boost = 0.0
 	echo_ready = false
 	if lab:
-		skills = {"power":5, "frost":5, "pierce":5, "blast":5, "ricochet":5, "rebound":5, "laser":5, "bomb":5, "freeze":3, "missile":3}
+		# Keep the test lab honest: it uses the same four-passive / three-active
+		# build shape as a normal run, rather than showing an impossible loadout.
+		skills = {"power":5, "frost":5, "pierce":5, "rebound":5, "laser":5, "bomb":5, "freeze":3}
 		purchased_balls = 40
 		points = 999999
 		for row in range(9):
@@ -452,7 +454,9 @@ func load_run() -> bool:
 		if not config.skills.has(id) or data.skills[id] < 1 or data.skills[id] > (3 if config.skills[id].get("fusion", false) else 5):
 			return false
 	skills = data.skills
-	if count_type("passive") > 6 or count_type("active") > 4:
+	# Older saves can contain the previous 6/4 layout. Reject them instead of
+	# resuming an invisible over-cap build after the slot layout changes.
+	if count_type("passive") > config.passive_slots or count_type("active") > config.active_slots:
 		skills = {}
 		return false
 	bricks = data.bricks
